@@ -1,6 +1,8 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.model.payroll.EmployeeProvidentFund;
+import com.example.payroll.models.payroll.EmployeeProvidentFund;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -14,8 +16,9 @@ public interface EmployeeProvidentFundRepository extends CrudRepository<Employee
             "   where pf.employeeId = :employeeId " +
             "   and pf.fromDate >= :fromDate " +
             "   and pf.toDate <= :toDate")
-    List<EmployeeProvidentFund> getEmployeeMonthlyPFByDateRangeAndEmployeeId(
+    Page<EmployeeProvidentFund> getEmployeeMonthlyPFByDateRangeAndEmployeeId(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
-            @Param("employeeId") Long employeeId);
+            @Param("employeeId") Long employeeId,
+            Pageable pageable);
 }

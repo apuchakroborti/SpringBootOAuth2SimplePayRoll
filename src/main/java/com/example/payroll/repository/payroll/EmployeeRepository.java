@@ -1,31 +1,24 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.model.payroll.Employee;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.example.payroll.models.payroll.Employee;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.util.Optional;
 
-public interface EmployeeRepository extends CrudRepository<Employee, Long> {
-    Employee findByUsername(String username);
-    @Query("select e "+
-            "   from " +
-            "   Employee e " +
-            "   where " +
-            "   e.status='ACTIVE' and "+
-            "   (:employeeId is null or e.id = :employeeId) and" +
-            "   (:firstName is null or e.firstName like :firstName) and  " +
-            "   (:username is null or e.username = :username) and" +
-            "   (:dateOfJoining is null or e.dateOfJoining= :dateOfJoining) and  " +
-            "   (:email is null or e.email= :email) ")
-    Page<Employee> searchEmployee(@Param("employeeId") Long employeeId,
-                                                   @Param("firstName") String firstName,
-                                                    @Param("username") String username,
-                                                   @Param("dateOfJoining") LocalDate dateOfJoining,
-                                                   @Param("email") String email,
-                                                   Pageable pageable);
+@Repository
+public interface EmployeeRepository extends CrudRepository<Employee, Long>, JpaSpecificationExecutor<Employee> {
+
+//    Employee findByEmail(@Param("email") String email);
+
+    Optional<Employee> findByEmail(String email);
+
+    Optional<Employee> findByUserId(String userId);
+
+    @Query("select  cu from Employee cu where cu.oauthUser.id = ?#{principal.id}")
+    Optional<Employee> getLoggedInEmployee();
 
 }

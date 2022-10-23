@@ -2,6 +2,7 @@ package com.example.payroll.controllers;
 
 import com.example.payroll.dto.request.LoginRequestDto;
 import com.example.payroll.dto.response.ServiceResponse;
+import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.services.payroll.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class LoginController {
     LoginService loginService;
 
     @PostMapping
-    public ServiceResponse checkLoginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
+    public ServiceResponse checkLoginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws GenericException {
         return new ServiceResponse(null, loginService.checkLoginUser(loginRequestDto));
     }
 }

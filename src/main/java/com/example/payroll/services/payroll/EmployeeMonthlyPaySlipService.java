@@ -1,13 +1,15 @@
 package com.example.payroll.services.payroll;
 
 
-import com.example.payroll.dto.EmployeeMonthlyPaySlipModel;
+import com.example.payroll.dto.EmployeeMonthlyPaySlipDto;
+import com.example.payroll.models.payroll.EmployeeMonthlyPaySlip;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.util.List;
 
 public interface EmployeeMonthlyPaySlipService {
-   EmployeeMonthlyPaySlipModel createPaySlip(EmployeeMonthlyPaySlipModel employeeMonthlyPaySlipModel);
-   List<EmployeeMonthlyPaySlipModel> getPaySlipWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId);
+   EmployeeMonthlyPaySlipDto createPaySlip(EmployeeMonthlyPaySlipDto employeeMonthlyPaySlipDto);
+   Page<EmployeeMonthlyPaySlip> getPaySlipWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId, Pageable pageable);
 
 }

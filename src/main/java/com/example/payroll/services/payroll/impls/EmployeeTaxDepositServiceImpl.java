@@ -1,14 +1,17 @@
 package com.example.payroll.services.payroll.impls;
 
-import com.example.payroll.dto.EmployeeTaxDepositModel;
-import com.example.payroll.model.payroll.EmployeeTaxDeposit;
+import com.example.payroll.dto.EmployeeTaxDepositDto;
+import com.example.payroll.models.payroll.EmployeeTaxDeposit;
 import com.example.payroll.repository.payroll.EmployeeTaxDepositRepository;
 import com.example.payroll.services.payroll.EmployeeTaxDepositService;
 import com.example.payroll.utils.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,22 +21,26 @@ public class EmployeeTaxDepositServiceImpl implements EmployeeTaxDepositService 
     EmployeeTaxDepositRepository employeeTaxDepositRepository;
 
     @Override
-    public EmployeeTaxDepositModel insertTaxInfo(EmployeeTaxDepositModel employeeTaxDepositModel){
+    public EmployeeTaxDepositDto insertTaxInfo(EmployeeTaxDepositDto employeeTaxDepositDto){
         EmployeeTaxDeposit employeeTaxDeposit = new EmployeeTaxDeposit();
-        Util.copyProperty(employeeTaxDepositModel, employeeTaxDeposit);
-        employeeTaxDeposit = employeeTaxDepositRepository.save(employeeTaxDeposit);
-        Util.copyProperty(employeeTaxDeposit, employeeTaxDepositModel);
-        return employeeTaxDepositModel;
-    }
-    @Override
-    public List<EmployeeTaxDepositModel> getAllTaxInfoByEmployeeId(Long employeeId){
-        List<EmployeeTaxDeposit> employeeTaxDepositList = employeeTaxDepositRepository.findAllByEmployeeId(employeeId);
-        return Util.toDtoList(employeeTaxDepositList, EmployeeTaxDepositModel.class);
-    }
-    @Override
-    public List<EmployeeTaxDepositModel> getPFInfoWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId){
-        List<EmployeeTaxDeposit> taxInfoList = employeeTaxDepositRepository.getAllByEmployeeIdAndFromDateAndToDate(employeeId, fromDate, toDate);
+        Util.copyProperty(employeeTaxDepositDto, employeeTaxDeposit);
 
-        return Util.toDtoList(taxInfoList, EmployeeTaxDepositModel.class);
+        employeeTaxDeposit.setCreatedBy(1L);
+        employeeTaxDeposit.setCreateTime(LocalDateTime.now());
+
+        employeeTaxDeposit = employeeTaxDepositRepository.save(employeeTaxDeposit);
+        Util.copyProperty(employeeTaxDeposit, employeeTaxDepositDto);
+        return employeeTaxDepositDto;
+    }
+    @Override
+    public Page<EmployeeTaxDeposit> getAllTaxInfoByEmployeeId(Long employeeId, Pageable pageable){
+        Page<EmployeeTaxDeposit> employeeTaxDepositPage = employeeTaxDepositRepository.findAllByEmployeeId(employeeId, pageable);
+        return employeeTaxDepositPage;
+    }
+    @Override
+    public Page<EmployeeTaxDeposit> getTaxInfoWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId, Pageable pageable){
+        Page<EmployeeTaxDeposit> taxInfoPage = employeeTaxDepositRepository.getAllByEmployeeIdAndFromDateAndToDate(employeeId, fromDate, toDate, pageable);
+
+        return taxInfoPage;
     }
 }

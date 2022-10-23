@@ -1,6 +1,8 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.model.payroll.EmployeeMonthlyPaySlip;
+import com.example.payroll.models.payroll.EmployeeMonthlyPaySlip;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -15,8 +17,9 @@ public interface EmployeeMonthlyPaySlipRepository extends CrudRepository<Employe
             "   where payslip.employeeId = :employeeId " +
             "   and payslip.fromDate >= :fromDate " +
             "   and payslip.toDate <= :toDate")
-    List<EmployeeMonthlyPaySlip> getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+    Page<EmployeeMonthlyPaySlip> getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
-            @Param("employeeId") Long employeeId);
+            @Param("employeeId") Long employeeId,
+            Pageable pageable);
 }

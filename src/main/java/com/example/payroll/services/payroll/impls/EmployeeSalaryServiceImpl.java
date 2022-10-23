@@ -1,18 +1,20 @@
 package com.example.payroll.services.payroll.impls;
 
-import com.example.payroll.dto.EmployeeSalaryModel;
-import com.example.payroll.exceptions.PayrollException;
-import com.example.payroll.model.payroll.Employee;
-import com.example.payroll.model.payroll.EmployeeSalary;
+import com.example.payroll.dto.EmployeeSalaryDto;
+import com.example.payroll.exceptions.GenericException;
+import com.example.payroll.models.payroll.Employee;
+import com.example.payroll.models.payroll.EmployeeSalary;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
 import com.example.payroll.services.payroll.EmployeeSalaryService;
 import com.example.payroll.utils.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 
@@ -24,40 +26,45 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
     EmployeeRepository employeeRepository;
 
     @Override
-    public EmployeeSalaryModel insertSalaryData(EmployeeSalaryModel employeeSalaryModel) throws PayrollException {
-        EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(employeeSalaryModel.getEmployeeId());
+    public EmployeeSalaryDto insertSalaryData(EmployeeSalaryDto employeeSalaryDto) throws GenericException {
+        EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(employeeSalaryDto.getEmployeeId());
         if(employeeSalary!=null){
-            if(employeeSalaryModel.getFromDate()==null){
-                throw new PayrollException("Please provide the starting date of the salary!");
+            if(employeeSalaryDto.getFromDate()==null){
+                throw new GenericException("Please provide the starting date of the salary!");
             }
-            employeeSalary.setToDate(employeeSalaryModel.getFromDate().minusDays(1));
+            employeeSalary.setToDate(employeeSalaryDto.getFromDate().minusDays(1));
             employeeSalaryRepository.save(employeeSalary);
         }else{
-            Optional<Employee> optional = employeeRepository.findById(employeeSalaryModel.getEmployeeId());
+            Optional<Employee> optional = employeeRepository.findById(employeeSalaryDto.getEmployeeId());
             if(!optional.isPresent()){
-                throw new PayrollException("employee not found!");
+                throw new GenericException("employee not found!");
             }
-            employeeSalaryModel.setFromDate(optional.get().getDateOfJoining());
+            employeeSalaryDto.setFromDate(optional.get().getDateOfJoining());
         }
         EmployeeSalary employeeSalaryNew = new EmployeeSalary();
-        Util.copyProperty(employeeSalaryModel, employeeSalaryNew);
-        Double basic = employeeSalaryModel.getGrossSalary()*60/100.0;
+        Util.copyProperty(employeeSalaryDto, employeeSalaryNew);
+
+        Double basic = employeeSalaryDto.getGrossSalary()*60/100.0;
         employeeSalaryNew.setBasicSalary(basic);
-        employeeSalaryNew.setStatus("ACTIVE");
+        employeeSalaryNew.setStatus(true);
+
+        employeeSalaryNew.setCreatedBy(1L);
+        employeeSalaryNew.setCreateTime(LocalDateTime.now());
+
         employeeSalaryNew = employeeSalaryRepository.save(employeeSalaryNew);
-        Util.copyProperty(employeeSalaryNew, employeeSalaryModel);
-        return employeeSalaryModel;
+        Util.copyProperty(employeeSalaryNew, employeeSalaryDto);
+        return employeeSalaryDto;
     }
     @Override
-    public List<EmployeeSalaryModel> getSalaryDataWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId) throws PayrollException{
-        List<EmployeeSalary> employeeSalaryList = employeeSalaryRepository.getEmployeeSalaryByDateRangeAndEmployeeId(fromDate, toDate, employeeId);
-        return Util.toDtoList(employeeSalaryList, EmployeeSalaryModel.class);
+    public Page<EmployeeSalary> getSalaryDataWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId, Pageable pageable)throws GenericException{
+        Page<EmployeeSalary> employeeSalaryPage = employeeSalaryRepository.getEmployeeSalaryByDateRangeAndEmployeeId(fromDate, toDate, employeeId, pageable);
+        return employeeSalaryPage;
     }
     @Override
-    public EmployeeSalaryModel getCurrentSalaryByEmployeeId(Long employeeId) throws PayrollException{
+    public EmployeeSalaryDto getCurrentSalaryByEmployeeId(Long employeeId) throws GenericException {
         EmployeeSalary employeeCurrentSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(employeeId);
-        EmployeeSalaryModel employeeSalaryModel = new EmployeeSalaryModel();
-        Util.copyProperty(employeeCurrentSalary, employeeSalaryModel);
-        return employeeSalaryModel;
+        EmployeeSalaryDto employeeSalaryDto = new EmployeeSalaryDto();
+        Util.copyProperty(employeeCurrentSalary, employeeSalaryDto);
+        return employeeSalaryDto;
     }
 }
