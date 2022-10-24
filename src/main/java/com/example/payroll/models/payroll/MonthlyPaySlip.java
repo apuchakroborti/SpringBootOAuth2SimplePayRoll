@@ -4,17 +4,19 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
 @Table(name = "EMPLOYEE_MONTHLY_PAY_SLIP")
-public class EmployeeMonthlyPaySlip extends EntityCommon {
+public class MonthlyPaySlip extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "EMPLOYEE_ID", nullable = false)
-    private Long employeeId;
+    @ManyToOne
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
+    private Employee employee;
 
     @Column(name = "GROSS_SALARY", nullable = false)
     private Double grossSalary;
@@ -26,18 +28,19 @@ public class EmployeeMonthlyPaySlip extends EntityCommon {
     private Double houseRent;
 
     @Column(name = "CONVEYANCE")
-    private Integer conveyenceAllowance;
+    private Double conveyanceAllowance;
 
     @Column(name = "MEDICAL_ALLOWANCE")
     private Double medicalAllowance;
 
     private Double due;
 
-    @Column(name = "PF_DEDUCTION")
-    private Double pfDeductionAmount;
+    @OneToOne
+    @JoinColumn(name = "PF_DEDUCTION_ID")
+    private ProvidentFund providentFund;
 
-    @Column(name = "TAX_DEDUCTION")
-    private Double taxDeductionAmount;
+    @OneToMany(mappedBy = "monthlyPaySlip", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<EmployeeTaxDeposit> employeeTaxDepositList;
 
     @Column(name = "ARREARS")
     private Double arrears;

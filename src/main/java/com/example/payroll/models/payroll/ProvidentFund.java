@@ -12,13 +12,14 @@ import java.time.LocalDate;
 @Table(name = "EMPLOYEE_PROVIDENT_FUND")
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmployeeProvidentFund extends EntityCommon {
+public class ProvidentFund extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "EMPLOYEE_ID", nullable = false)
-    private Long employeeId;
+    @ManyToOne
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
+    private Employee employee;
 
     @Column(name = "EMPLOYEE_CONTRIBUTION")
     private Double employeeContribution;
@@ -33,4 +34,7 @@ public class EmployeeProvidentFund extends EntityCommon {
 
     @Column(name = "TO_DATE", nullable = false)
     private LocalDate toDate;
+
+    @OneToOne
+    private MonthlyPaySlip monthlyPaySlip;
 }

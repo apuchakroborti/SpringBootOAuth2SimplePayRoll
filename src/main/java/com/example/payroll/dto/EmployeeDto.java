@@ -1,10 +1,10 @@
 package com.example.payroll.dto;
 
-import com.example.payroll.dto.CommonDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDate;
 
@@ -26,4 +26,6 @@ public class EmployeeDto extends CommonDto implements Serializable {
     private Integer addressId;
     private Boolean status;
     private String password;
+    @NotNull(message = "Gross salary must not be null!")
+    private Double grossSalary;
 }

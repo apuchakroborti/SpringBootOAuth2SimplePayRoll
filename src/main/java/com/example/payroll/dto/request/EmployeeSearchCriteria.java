@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class UserSearchCriteria {
+public class EmployeeSearchCriteria {
 
     private Long id;
     private String email;

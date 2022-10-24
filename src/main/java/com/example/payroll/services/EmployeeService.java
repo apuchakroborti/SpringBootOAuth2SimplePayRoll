@@ -1,6 +1,6 @@
 package com.example.payroll.services;
 
-import com.example.payroll.dto.request.UserSearchCriteria;
+import com.example.payroll.dto.request.EmployeeSearchCriteria;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.dto.EmployeeDto;
 import com.example.payroll.models.payroll.Employee;
@@ -13,6 +13,6 @@ public interface EmployeeService {
     EmployeeDto findByUsername(String username) throws GenericException;
     EmployeeDto findEmployeeById(Long id) throws GenericException;
     EmployeeDto updateEmployeeById(Long id, EmployeeDto employeeBean) throws GenericException;
-    Page<Employee> getEmployeeList(UserSearchCriteria criteria, Pageable pageable) throws GenericException;
+    Page<Employee> getEmployeeList(EmployeeSearchCriteria criteria, Pageable pageable) throws GenericException;
     Boolean deleteEmployeeById(Long id) throws GenericException;
 }

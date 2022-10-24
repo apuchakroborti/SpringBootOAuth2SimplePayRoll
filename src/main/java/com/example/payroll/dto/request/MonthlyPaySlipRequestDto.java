@@ -1,5 +1,6 @@
-package com.example.payroll.dto;
+package com.example.payroll.dto.request;
 
+import com.example.payroll.dto.EmployeeDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,16 +11,15 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmployeeTaxDepositDto extends CommonDto {
+public class MonthlyPaySlipRequestDto {
     private Long id;
-    @NotNull(message = "Employee Id should not be null!")
+
+    @NotNull(message = "Employee id should not be null!")
     private EmployeeDto employee;
-    private Double amount;
-    private String chalanNo;
-    private String comments;
 
     @NotNull(message = "From date should not be null!")
     private LocalDate fromDate;
+
     @NotNull(message = "To date should not be null!")
     private LocalDate toDate;
 }

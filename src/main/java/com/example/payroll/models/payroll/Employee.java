@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Entity
@@ -27,7 +28,7 @@ public class Employee extends EntityCommon {
     @Column(name = "LAST_NAME")
     private String lastName;
 
-    @Column(name = "EMAIL", nullable = false)
+    @Column(name = "EMAIL", nullable = false, length = 120, unique = true)
     private String email;
 
     @Column(name = "PHONE")
@@ -56,4 +57,13 @@ public class Employee extends EntityCommon {
 
     @OneToOne(fetch = FetchType.LAZY)
     private User oauthUser;
+
+    @OneToMany(mappedBy ="employee" ,fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<EmployeeSalary> employeeSalaryList;
+
+    @OneToMany(mappedBy ="employee" ,fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<EmployeeTaxDeposit> employeeTaxList;
+
+    @OneToMany(mappedBy ="employee" ,fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<ProvidentFund> employeePFList;
 }

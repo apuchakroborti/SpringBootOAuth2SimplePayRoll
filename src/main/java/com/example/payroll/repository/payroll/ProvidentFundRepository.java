@@ -1,6 +1,6 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.models.payroll.EmployeeProvidentFund;
+import com.example.payroll.models.payroll.ProvidentFund;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -8,15 +8,14 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
-import java.util.List;
 
-public interface EmployeeProvidentFundRepository extends CrudRepository<EmployeeProvidentFund, Long> {
+public interface ProvidentFundRepository extends CrudRepository<ProvidentFund, Long> {
     @Query(value="  select pf " +
-            "   from EmployeeProvidentFund pf" +
-            "   where pf.employeeId = :employeeId " +
-            "   and pf.fromDate >= :fromDate " +
-            "   and pf.toDate <= :toDate")
-    Page<EmployeeProvidentFund> getEmployeeMonthlyPFByDateRangeAndEmployeeId(
+            "   from ProvidentFund pf" +
+            "   where ( :employeeId is null or pf.employee.id = :employeeId )" +
+            "   and ( :fromDate is null or pf.fromDate >= :fromDate )" +
+            "   and ( :toDate is null or pf.toDate <= :toDate )")
+    Page<ProvidentFund> getEmployeeMonthlyPFByDateRangeAndEmployeeId(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("employeeId") Long employeeId,

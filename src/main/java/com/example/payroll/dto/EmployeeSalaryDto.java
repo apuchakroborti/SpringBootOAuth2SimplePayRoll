@@ -14,7 +14,7 @@ public class EmployeeSalaryDto extends CommonDto {
     private Long id;
 
     @NotNull(message = "employee id can't be null!")
-    private Long employeeId;
+    private EmployeeDto employee;
 
     @NotNull(message = "Gross salary can't be null!")
     private Double grossSalary;
@@ -22,6 +22,7 @@ public class EmployeeSalaryDto extends CommonDto {
 
     private String comments;
 
+    @NotNull(message = "from date must be provided")
     private LocalDate fromDate;
     private LocalDate toDate;
 

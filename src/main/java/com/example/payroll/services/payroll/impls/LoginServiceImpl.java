@@ -8,6 +8,7 @@ import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.security_oauth2.repository.UserRepository;
 import com.example.payroll.services.payroll.LoginService;
+import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,33 +34,23 @@ public class LoginServiceImpl implements LoginService {
     public EmployeeDto checkLoginUser(LoginRequestDto loginRequestDto) throws GenericException {
         EmployeeDto employeeDto = new EmployeeDto();
 
-        if(loginRequestDto.getUsername() ==null || loginRequestDto.getUsername().trim().length() ==0){
-            employeeDto = null;
-        }
 
-        if(loginRequestDto.getPassword()==null || loginRequestDto.getPassword().trim().length()==0){
-            employeeDto = null;
-        }
-
-        if(loginRequestDto.getUsername() !=null && loginRequestDto.getPassword() !=null){
-            Optional<User> optionalUser = userRepository.findByUsername(loginRequestDto.getUsername());
-            if(optionalUser.isPresent()){
-                if(passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
-                    Optional<Employee> optionalEmployee = employeeRepository.findByEmail(loginRequestDto.getUsername());
-                    if(optionalEmployee.isPresent()){
-                        Util.copyProperty(optionalEmployee, employeeDto);
-                    }else{
-                        employeeDto.setFirstName("Admin");
-                        employeeDto.setLastName("Admin");
-                    }
-                } else {
-                    System.out.println("Password mismatch!!");
+        Optional<User> optionalUser = userRepository.findByUsername(loginRequestDto.getUsername());
+        if(optionalUser.isPresent()){
+            if(passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
+                Optional<Employee> optionalEmployee = employeeRepository.findByEmail(loginRequestDto.getUsername());
+                if(optionalEmployee.isPresent()){
+                    Util.copyProperty(optionalEmployee.get(), employeeDto);
+                }else{
+                    employeeDto.setFirstName("Admin");
+                    employeeDto.setLastName("Admin");
                 }
-            }else{
-                System.out.println("User not found!!");
+            } else {
+                throw new GenericException(Defs.PASSWORD_MISMATCHED);
             }
+        }else{
+            throw new GenericException(Defs.USER_NOT_FOUND);
         }
-
         return employeeDto;
     }
 }

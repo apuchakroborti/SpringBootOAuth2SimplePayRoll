@@ -13,9 +13,9 @@ public interface EmployeeSalaryRepository extends CrudRepository<EmployeeSalary,
 
     @Query(value="  select salary " +
             "   from EmployeeSalary salary " +
-            "   where salary.employeeId = :employeeId " +
-            "   and salary.fromDate >= :fromDate " +
-            "   and salary.toDate <= :toDate")
+            "   where ( :employeeId is null or salary.employee.id = :employeeId ) " +
+            "   and (:fromDate is null or salary.fromDate >= :fromDate) " +
+            "   and (:toDate is null or salary.toDate <= :toDate )")
     Page<EmployeeSalary> getEmployeeSalaryByDateRangeAndEmployeeId(
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
@@ -24,7 +24,7 @@ public interface EmployeeSalaryRepository extends CrudRepository<EmployeeSalary,
 
     @Query(value="  select salary " +
             "   from EmployeeSalary salary " +
-            "   where salary.employeeId = :employeeId " +
+            "   where salary.employee.id = :employeeId " +
             "   and salary.toDate is null")
     EmployeeSalary getEmployeeCurrentSalaryByEmployeeId(
             @Param("employeeId") Long employeeId);

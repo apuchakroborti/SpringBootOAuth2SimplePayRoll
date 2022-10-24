@@ -25,6 +25,7 @@ CREATE TABLE EMPLOYEE(
     EDITED_BY	    bigint,
     EDIT_TIME       datetime,
     INTERNAL_VERSION bigint default 1,
+    oauth_user_id     bigint,
     primary key (ID)
 ) engine=InnoDB;
 

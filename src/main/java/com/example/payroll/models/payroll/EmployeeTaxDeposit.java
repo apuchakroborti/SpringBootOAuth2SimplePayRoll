@@ -1,6 +1,8 @@
 package com.example.payroll.models.payroll;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -8,13 +10,20 @@ import java.time.LocalDate;
 @Entity
 @Data
 @Table(name = "EMPLOYEE_TAX_DEPOSIT")
+@NoArgsConstructor
+@AllArgsConstructor
 public class EmployeeTaxDeposit extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "EMPLOYEE_ID", nullable = false)
-    private Long employeeId;
+    @ManyToOne
+    @JoinColumn(name = "MONTHLY_PAYSLIP_ID", nullable = false)
+    private MonthlyPaySlip monthlyPaySlip;
+
+    @ManyToOne
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
+    private Employee employee;
 
     @Column(name = "AMOUNT", nullable = false)
     private Double amount;

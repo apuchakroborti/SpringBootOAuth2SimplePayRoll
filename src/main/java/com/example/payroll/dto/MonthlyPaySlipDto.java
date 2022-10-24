@@ -1,45 +1,36 @@
 package com.example.payroll.dto;
 
 import com.example.payroll.models.payroll.EntityCommon;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.Id;
+import java.time.LocalDate;
+import java.util.List;
 
 @Data
-public class EmployeeMonthlyPaySlipDto extends EntityCommon {
-    @Id
+@NoArgsConstructor
+@AllArgsConstructor
+public class MonthlyPaySlipDto extends EntityCommon {
     private Long id;
-
-
-    private Long employeeId;
+    private EmployeeDto employee;
     private Double grossSalary;
-
-
     private Double basicSalary;
-
-
     private Double houseRent;
-
     private Double conveyanceAllowance;
-
     private Double medicalAllowance;
-
     private Double due;
 
-    private Double pfDeductionAmount;
-
-    private Double taxDeductionAmount;
+    private ProvidentFundDto providentFund;
+    private List<EmployeeTaxDepositDto> employeeTaxDepositList;
 
     private Double arrears;
-
     private Double festivalBonus;
-
     private Double incentiveBonus;
-
     private Double otherPay;
-
-    private Double totalPayment;
+    private Double netPayment;
     private String status;
-
     private String comments;
+    private LocalDate fromDate;
+    private LocalDate toDate;
 }

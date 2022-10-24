@@ -1,10 +1,11 @@
 package com.example.payroll.services.payroll.impls;
 
-import com.example.payroll.dto.EmployeeProvidentFundDto;
-import com.example.payroll.models.payroll.EmployeeProvidentFund;
-import com.example.payroll.repository.payroll.EmployeeProvidentFundRepository;
-import com.example.payroll.services.payroll.EmployeeProvidentFundService;
-import com.example.payroll.utils.Util;
+import com.example.payroll.dto.request.ProvidentFundSearchCriteria;
+import com.example.payroll.exceptions.GenericException;
+import com.example.payroll.models.payroll.EmployeeSalary;
+import com.example.payroll.models.payroll.ProvidentFund;
+import com.example.payroll.repository.payroll.ProvidentFundRepository;
+import com.example.payroll.services.payroll.ProvidentFundService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,30 +13,44 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 @Service
-public class EmployeeProvidentFundServiceImpl implements EmployeeProvidentFundService {
+public class EmployeeProvidentFundServiceImpl implements ProvidentFundService {
     @Autowired
-    EmployeeProvidentFundRepository employeeProvidentFundRepository;
+    ProvidentFundRepository employeeProvidentFundRepository;
 
     @Override
-    public EmployeeProvidentFundDto insertPfData(EmployeeProvidentFundDto employeeProvidentFundDto){
+    public ProvidentFund insertPfData(EmployeeSalary employeeSalary, LocalDate month) throws GenericException {
+        ProvidentFund providentFund = new ProvidentFund();
 
-        EmployeeProvidentFund employeeProvidentFund = new EmployeeProvidentFund();
-        Util.copyProperty(employeeProvidentFundDto, employeeProvidentFund);
+        LocalDate start = month.with(firstDayOfMonth());
+        LocalDate end = month.with(lastDayOfMonth());
 
-        employeeProvidentFund.setCreatedBy(1L);
-        employeeProvidentFund.setCreateTime(LocalDateTime.now());
+        providentFund.setFromDate(start);
+        providentFund.setToDate(end);
 
-        employeeProvidentFund = employeeProvidentFundRepository.save(employeeProvidentFund);
-        Util.copyProperty(employeeProvidentFund, employeeProvidentFundDto);
-        return employeeProvidentFundDto;
+        providentFund.setEmployeeContribution(employeeSalary.getBasicSalary()*7.5/100);
+        providentFund.setCompanyContribution(employeeSalary.getBasicSalary()*7.5/100);
+
+        providentFund.setComments("Monthly deposit to provident fund");
+
+        providentFund.setEmployee(employeeSalary.getEmployee());
+
+        providentFund.setCreatedBy(1L);
+        providentFund.setCreateTime(LocalDateTime.now());
+
+        providentFund = employeeProvidentFundRepository.save(providentFund);
+
+        return providentFund;
     }
     @Override
-    public Page<EmployeeProvidentFund> getPFInfoWithInDateRangeAndEmployeeId(LocalDate fromDate, LocalDate toDate, Long employeeId, Pageable pageable){
-        Page<EmployeeProvidentFund> employeeMonthlyPaySlipPage = employeeProvidentFundRepository.getEmployeeMonthlyPFByDateRangeAndEmployeeId(fromDate, toDate, employeeId, pageable);
+    public Page<ProvidentFund> getPFInfoWithSearchCriteria(ProvidentFundSearchCriteria criteria, Pageable pageable) throws GenericException{
+        Page<ProvidentFund> employeePFPage = employeeProvidentFundRepository.getEmployeeMonthlyPFByDateRangeAndEmployeeId(
+                criteria.getFromDate(), criteria.getToDate(), criteria.getEmployeeId(), pageable);
 
-        return employeeMonthlyPaySlipPage;
+        return employeePFPage;
     }
 }

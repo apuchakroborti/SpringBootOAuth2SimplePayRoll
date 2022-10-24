@@ -1,6 +1,8 @@
 package com.example.payroll.models.payroll;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
@@ -8,13 +10,16 @@ import java.time.LocalDate;
 @Entity
 @Data
 @Table(name = "EMPLOYEE_SALARY")
+@NoArgsConstructor
+@AllArgsConstructor
 public class EmployeeSalary extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "EMPLOYEE_ID", nullable = false)
-    private Long employeeId;
+    @ManyToOne
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
+    private Employee employee;
 
     @Column(name = "BASIC_SALARY")
     private Double basicSalary;

@@ -15,9 +15,9 @@ public interface EmployeeTaxDepositRepository extends CrudRepository<EmployeeTax
 
     @Query(value="  select tax " +
             "   from EmployeeTaxDeposit tax" +
-            "   where tax.employeeId = :employeeId " +
-            "   and tax.fromDate >= :fromDate " +
-            "   and tax.toDate <= :toDate ")
+            "   where (:employeeId is null or tax.employee.id = :employeeId ) " +
+            "   and ( :fromDate is null or tax.fromDate >= :fromDate ) " +
+            "   and ( :toDate is null or tax.toDate <= :toDate ) ")
     Page<EmployeeTaxDeposit> getAllByEmployeeIdAndFromDateAndToDate(
             @Param("employeeId") Long employeeId,
             @Param("fromDate") LocalDate fromDate,

@@ -2,7 +2,7 @@ package com.example.payroll.controllers;
 
 import com.example.payroll.dto.request.PasswordChangeRequestDto;
 import com.example.payroll.dto.request.PasswordResetRequestDto;
-import com.example.payroll.dto.request.UserSearchCriteria;
+import com.example.payroll.dto.request.EmployeeSearchCriteria;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.dto.EmployeeDto;
@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/employee")
@@ -29,13 +31,13 @@ public class EmployeeController {
     }
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping
-    public ServiceResponse enrollEmployee(@RequestBody EmployeeDto customUserDto) throws GenericException {
+    public ServiceResponse enrollEmployee(@Valid @RequestBody EmployeeDto customUserDto) throws GenericException {
         return new ServiceResponse(null, employeeService.enrollEmployee(customUserDto));
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
     @GetMapping()
-    public ServiceResponse searchEmployee(UserSearchCriteria criteria, @PageableDefault(value = 10) Pageable pageable) throws GenericException {
+    public ServiceResponse searchEmployee(EmployeeSearchCriteria criteria, @PageableDefault(value = 10) Pageable pageable) throws GenericException {
         return Utils.pageToServiceResponse(employeeService.getEmployeeList(criteria, pageable), EmployeeDto.class);
     }
 
