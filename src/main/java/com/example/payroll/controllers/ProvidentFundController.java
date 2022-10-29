@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.*;
 public class ProvidentFundController {
     @Autowired
     ProvidentFundService employeeProvidentFundService;
-
-    @GetMapping()
+    //TODO need to add description about all of these endpoints
+    @GetMapping
     public ServiceResponse getPFData(ProvidentFundSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable) throws GenericException {
         return Utils.pageToServiceResponse(employeeProvidentFundService.getPFInfoWithSearchCriteria(criteria, pageable), ProvidentFundDto.class);
     }

@@ -1,17 +1,19 @@
 package com.example.payroll.models.payroll;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 
+//using @Getter and @Setter instead of @Data to remove remove recursive toString and EqualsAndHashCode method
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "EMPLOYEE_PROVIDENT_FUND")
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "employee")
+@EqualsAndHashCode(exclude = "employee")
 public class ProvidentFund extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -35,6 +37,6 @@ public class ProvidentFund extends EntityCommon {
     @Column(name = "TO_DATE", nullable = false)
     private LocalDate toDate;
 
-    @OneToOne
+    @OneToOne(mappedBy = "providentFund")
     private MonthlyPaySlip monthlyPaySlip;
 }

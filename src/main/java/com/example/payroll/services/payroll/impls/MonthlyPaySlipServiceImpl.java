@@ -6,13 +6,16 @@ import com.example.payroll.dto.request.MonthlyPaySlipRequestDto;
 import com.example.payroll.dto.request.PayslipSearchCriteria;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.models.payroll.*;
-import com.example.payroll.repository.payroll.EmployeeTaxDepositRepository;
+import com.example.payroll.repository.payroll.TaxDepositRepository;
 import com.example.payroll.repository.payroll.MonthlyPaySlipRepository;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
-import com.example.payroll.services.payroll.EmployeeMonthlyPaySlipService;
+import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.services.payroll.ProvidentFundService;
+import com.example.payroll.services.payroll.TaxDepositService;
 import com.example.payroll.utils.Defs;
+import com.example.payroll.utils.TaxType;
+import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,14 +23,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Array;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+
 @Service
 @Transactional
-public class EmployeeMonthlyPaySlipServiceImpl implements EmployeeMonthlyPaySlipService {
+public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
     @Autowired
     MonthlyPaySlipRepository monthlyPaySlipRepository;
 
@@ -41,27 +47,73 @@ public class EmployeeMonthlyPaySlipServiceImpl implements EmployeeMonthlyPaySlip
     EmployeeSalaryRepository employeeSalaryRepository;
 
     @Autowired
-    EmployeeTaxDepositRepository taxDepositRepository;
+    TaxDepositRepository taxDepositRepository;
 
-    //TODO need to implement payslip generation at the starting of a financial year
+    @Autowired
+    TaxDepositService taxDepositService;
 
-    //TODO need to implement
     @Override
-    public MonthlyPaySlipDto createPaySlip(MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
+    public MonthlyPaySlipDto geneartePaySlip(MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
         Optional<Employee> optionalEmployee = employeeRepository.findById(monthlyPaySlipRequestDto.getEmployee().getId());
         if(!optionalEmployee.isPresent())throw new GenericException(Defs.USER_NOT_FOUND);
-        EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(optionalEmployee.get().getId());
 
-        ProvidentFund providentFund = providentFundService.insertPfData(employeeSalary, monthlyPaySlipRequestDto.getFromDate());
+        LocalDate currDate = LocalDate.now();
+        if(monthlyPaySlipRequestDto.getFromDate().isAfter(currDate.with(lastDayOfMonth()))){
+            throw new GenericException("Payslip should be generated for the current or previous month!");
+        }
 
-        MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
+        if(monthlyPaySlipRequestDto.getFromDate().getMonth().getValue()!=monthlyPaySlipRequestDto.getToDate().getMonth().getValue()){
+            throw new GenericException(Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_SAME_MONTH);
+        }
 
-        monthlyPaySlip.setProvidentFund(providentFund);
-
-
-        monthlyPaySlip = monthlyPaySlipRepository.save(monthlyPaySlip);
+        List<LocalDate> currentFinancialYear = Utils.getCurrentFinancialYear();
+        if(monthlyPaySlipRequestDto.getFromDate().isBefore(currentFinancialYear.get(0)) || monthlyPaySlipRequestDto.getToDate().isAfter(currentFinancialYear.get(1))){
+            throw new GenericException(Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_CURRENT_FINANCIAL_YEAR);
+        }
 
         MonthlyPaySlipDto monthlyPaySlipDto = new MonthlyPaySlipDto();
+
+        Page<MonthlyPaySlip> page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+                monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0,1));
+
+        if(page.getTotalElements()==0){
+            //generate payslip for the current financial year
+            EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(optionalEmployee.get().getId());
+            Boolean res = this.generatePayslipForCurrentFinancialYear(optionalEmployee.get(), employeeSalary, currentFinancialYear.get(0));
+            if(!res){
+                throw new GenericException(Defs.INTERNAL_SERVER_ERROR);
+            }
+
+            page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+                    monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0,1));
+
+            Utils.copyProperty(page.getContent().get(0), monthlyPaySlipDto);
+
+        }else{
+            Utils.copyProperty(page.getContent().get(0), monthlyPaySlipDto);
+        }
+
+        //TODO check tax deposited for this month or not
+        //TODO need to check the tax already deposited for this month or not
+
+        //if no then insert tax info
+        //this is to store the monthly tax deposit from company
+        Double taxToDepositForTheRequestMonth = this.getMonthlyTaxDepositAmount(optionalEmployee.get(), monthlyPaySlipRequestDto.getFromDate());
+
+        //deposit monthly tax
+        taxDepositService.insertPayslipTaxInfo(page.getContent().get(0),
+                optionalEmployee.get(),
+                taxToDepositForTheRequestMonth,
+                TaxType.FROM_COMPANY,
+                monthlyPaySlipRequestDto.getFromDate(),
+                monthlyPaySlipRequestDto.getToDate());
+
+        //TODO check provident fund deposited for this month or not
+        //TODO get provident fund and check
+
+        //TODO if not then insert provident fund data for this month
+
+
         return monthlyPaySlipDto;
 
     }
@@ -76,33 +128,21 @@ public class EmployeeMonthlyPaySlipServiceImpl implements EmployeeMonthlyPaySlip
     private Double getMonthlyTaxDepositAmount(Employee employee, LocalDate date)throws GenericException{
         try {
 
+            //index 0 = financial year start
+            //index 1 = financial year end
+            List<LocalDate> currentFinancialYear = Utils.getCurrentFinancialYear();
 
-            LocalDate currentDate = LocalDate.now();
-            LocalDate currFinancialYearStart = null;
-            LocalDate currFinancialYearEnd = null;
+            Integer remainingNumberOfMonth = Utils.getRemainingMonthForTheCurrentFinancialYear();
 
-            Integer remainingNumberOfMonth = 0;
-
-            if (currentDate.getMonth().getValue() <= 6) {
-                currFinancialYearStart = LocalDate.of(currentDate.getYear() - 1, 7, 1);
-                currFinancialYearEnd = LocalDate.of(currentDate.getYear(), 6, 30);
-
-                remainingNumberOfMonth = 6 - currentDate.getMonth().getValue() + 1;
-            } else {
-                currFinancialYearStart = LocalDate.of(currentDate.getYear(), 7, 1);
-                currFinancialYearEnd = LocalDate.of(currentDate.getYear() + 1, 6, 30);
-
-                remainingNumberOfMonth = 12 - currentDate.getMonth().getValue() + 1;
-            }
-            if (date.isAfter(currFinancialYearEnd)) {
+            if (date.isAfter(currentFinancialYear.get(1))) {
                 throw new GenericException("The date should be within the current financial year");
             }
 
             //get total taxable Income and total tax the for the current financial year
-            Double totalTaxAbleIncome = this.getTotalEstimatedTaxableIncomeBasedOnSalary(employee, currFinancialYearStart, currFinancialYearEnd);
+            Double totalTaxAbleIncome = this.getTotalEstimatedTaxableIncomeBasedOnSalary(employee, currentFinancialYear.get(0), currentFinancialYear.get(1));
 
             //get total tax deposition for the current financial year
-            Double totalTaxDeposited = generateTotalTaxDepositForTheCurrentFinancialYear(employee, currFinancialYearStart, currFinancialYearEnd);
+            Double totalTaxDeposited = generateTotalTaxDepositForTheCurrentFinancialYear(employee, currentFinancialYear.get(0), currentFinancialYear.get(1));
 
             //get the total tax need to pay for this financial year
             Double totalTaxNeedToPay = calculateTotalTaxFromTaxableIncome(totalTaxAbleIncome);
@@ -218,7 +258,7 @@ public class EmployeeMonthlyPaySlipServiceImpl implements EmployeeMonthlyPaySlip
     private Double generateTotalTaxDepositForTheCurrentFinancialYear(Employee employee, LocalDate fromDate, LocalDate toDate) throws GenericException{
         try {
             List<EmployeeTaxDeposit> list = taxDepositRepository.getAllByEmployeeIdAndFromDateAndToDate(
-                    employee.getId(), fromDate, toDate, PageRequest.of(0, 100)).getContent();
+                     fromDate, toDate,employee.getId(), PageRequest.of(0, 100)).getContent();
             Double totalTaxDeposited = list
                                         .stream()
                                         .mapToDouble(o -> o.getAmount())
@@ -238,53 +278,122 @@ public class EmployeeMonthlyPaySlipServiceImpl implements EmployeeMonthlyPaySlip
         //Barishal, Chattogram, Dhaka, Khulna, Rajshahi, Rangpur, Mymensingh and Sylhet.
         //TODO here need to check employee where is he/she living and his tax circle; here I am considering all them are in Dhaka
         List<Double> divisionWiseMinimumTax = new ArrayList<>();
-        divisionWiseMinimumTax.addAll(Arrays.asList(3000.0, 5000.0, 5000.0, 3000.0, 5000.0, 5000.0, 3000.0, 3000.0));
+        divisionWiseMinimumTax.addAll(Arrays.asList(
+                Defs.MINIMUM_TAX_BARISHAL,
+                Defs.MINIMUM_TAX_CHATTOGRAM,
+                Defs.MINIMUM_TAX_DHAKA,
+                Defs.MINIMUM_TAX_KHULNA,
+                Defs.MINIMUM_TAX_RAJSHAHI,
+                Defs.MINIMUM_TAX_RANGPUR,
+                Defs.MINIMUM_TAX_MYMENSINGH,
+                Defs.MINIMUM_TAX_SYLHET));
 
-
-        final Double taxFreeIncomePerYear = 300000.0;
-        final Double percent_5_PerYearUpto = 100000.0;
-        final Double percent_10_PerYearUpto = 300000.0;
-        final Double percent_15_PerYearUpto = 400000.0;
-        final Double percent_20_PerYearUpto = 500000.0;
-
-        taxableIncome-=taxFreeIncomePerYear;
+        taxableIncome-=Defs.TAX_FREE_INCOME_PER_YEAR;
 
         if(taxableIncome<1.0)return divisionWiseMinimumTax.get(2);
 
         Double tax = 0.0;
 
-        if((taxableIncome-percent_5_PerYearUpto)<0.0){
-            tax += taxableIncome * 0.05;
+        if((taxableIncome-Defs.PERCENT_5_PER_YEAR_UPTO)<0.0){
+            tax += taxableIncome * Defs.PERCENT_5;
             return Math.max(tax, divisionWiseMinimumTax.get(2));
         }
-        tax +=percent_5_PerYearUpto*0.05;
-        taxableIncome-=percent_5_PerYearUpto;
+        tax +=Defs.PERCENT_5_PER_YEAR_UPTO * Defs.PERCENT_5;
+        taxableIncome-=Defs.PERCENT_5_PER_YEAR_UPTO;
 
-        if((taxableIncome-percent_10_PerYearUpto)<0.0){
-            tax += taxableIncome * 0.10;
+        if((taxableIncome-Defs.PERCENT_10_PER_YEAR_UPTO)<0.0){
+            tax += taxableIncome * Defs.PERCENT_10;
             return Math.max(tax, divisionWiseMinimumTax.get(2));
         }
-        tax +=percent_5_PerYearUpto*0.10;
-        taxableIncome-=percent_5_PerYearUpto;
+        tax +=Defs.PERCENT_10_PER_YEAR_UPTO * Defs.PERCENT_10;
+        taxableIncome-=Defs.PERCENT_10_PER_YEAR_UPTO;
 
-        if((taxableIncome-percent_15_PerYearUpto)<0.0){
-            tax += taxableIncome * 0.15;
+        if((taxableIncome-Defs.PERCENT_15_PER_YEAR_UPTO)<0.0){
+            tax += taxableIncome * Defs.PERCENT_15;
             return Math.max(tax, divisionWiseMinimumTax.get(2));
         }
-        tax +=percent_15_PerYearUpto*0.15;
-        taxableIncome-=percent_15_PerYearUpto;
+        tax +=Defs.PERCENT_15_PER_YEAR_UPTO * Defs.PERCENT_15;
+        taxableIncome-=Defs.PERCENT_15_PER_YEAR_UPTO;
 
-        if((taxableIncome-percent_20_PerYearUpto)<0.0){
-            tax += taxableIncome * 0.20;
+        if((taxableIncome-Defs.PERCENT_20_PER_YEAR_UPTO)<0.0){
+            tax += taxableIncome * Defs.PERCENT_20;
             return Math.max(tax, divisionWiseMinimumTax.get(2));
         }
-        tax +=percent_20_PerYearUpto*0.20;
-        taxableIncome-=percent_20_PerYearUpto;
+        tax +=Defs.PERCENT_20_PER_YEAR_UPTO *Defs.PERCENT_20;
+        taxableIncome-=Defs.PERCENT_20_PER_YEAR_UPTO;
 
         if(taxableIncome>0){
-            tax +=taxableIncome*0.25;
+            tax +=taxableIncome*Defs.PERCENT_25;
             return Math.max(tax, divisionWiseMinimumTax.get(2));
         }
         return tax;
+    }
+
+    @Override
+    public Boolean generatePayslipForCurrentFinancialYear(Employee employee, EmployeeSalary employeeSalary, LocalDate fromDate) throws GenericException{
+
+        LocalDate toDate = null;
+        int month = fromDate.getMonthValue();
+        int year =fromDate.getYear();
+
+        if(month <=6){
+            toDate = LocalDate.of(year, 6, 30 );
+        }else{
+            toDate = LocalDate.of(year+1, 6, 30 );
+        }
+        List<MonthlyPaySlip> monthlyPaySlipList = new ArrayList<>();
+
+        MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
+        monthlyPaySlip = getBySettingAllValue(monthlyPaySlip, employeeSalary, fromDate, fromDate.with(lastDayOfMonth()));
+        monthlyPaySlipList.add(monthlyPaySlip);
+
+        fromDate = fromDate.with(lastDayOfMonth());
+        fromDate = fromDate.plusDays(1);
+
+        while(fromDate.isBefore(toDate.plusDays(1))){
+            MonthlyPaySlip monthlyPaySlipNew = new MonthlyPaySlip();
+            monthlyPaySlipNew = getBySettingAllValue(monthlyPaySlipNew, employeeSalary, fromDate.with(firstDayOfMonth()), fromDate.with(lastDayOfMonth()));
+            monthlyPaySlipList.add(monthlyPaySlipNew);
+
+            fromDate = fromDate.with(lastDayOfMonth());
+            fromDate = fromDate.plusDays(1);
+        }
+
+        monthlyPaySlipRepository.saveAll(monthlyPaySlipList);
+
+        return true;
+    }
+    private MonthlyPaySlip getBySettingAllValue(MonthlyPaySlip monthlyPaySlip, EmployeeSalary employeeSalary, LocalDate fromDate, LocalDate toDate){
+        monthlyPaySlip.setEmployee(employeeSalary.getEmployee());
+
+        monthlyPaySlip.setGrossSalary(employeeSalary.getGrossSalary());
+        monthlyPaySlip.setBasicSalary(employeeSalary.getBasicSalary());//60 percent
+
+        monthlyPaySlip.setHouseRent(employeeSalary.getGrossSalary()*0.3);//30 percent
+        monthlyPaySlip.setConveyanceAllowance(employeeSalary.getGrossSalary()*0.045);//4.5 percent
+        monthlyPaySlip.setMedicalAllowance(employeeSalary.getGrossSalary()*0.055); // 5.5 percent
+
+        monthlyPaySlip.setFestivalBonus(0.0);
+
+        monthlyPaySlip.setDue(0.0);
+        monthlyPaySlip.setArrears(0.0);
+        monthlyPaySlip.setIncentiveBonus(0.0);
+        monthlyPaySlip.setOtherPay(0.0);
+
+        monthlyPaySlip.setProvidentFund(null);
+
+        monthlyPaySlip.setNetPayment(
+                employeeSalary.getGrossSalary()+
+                        monthlyPaySlip.getDue()+
+                        monthlyPaySlip.getFestivalBonus()+
+                        monthlyPaySlip.getIncentiveBonus()+
+                        monthlyPaySlip.getOtherPay());
+
+        monthlyPaySlip.setFromDate(fromDate);
+        monthlyPaySlip.setToDate(toDate);
+
+        monthlyPaySlip.setCreatedBy(1l);
+        monthlyPaySlip.setCreateTime(LocalDateTime.now());
+        return monthlyPaySlip;
     }
 }

@@ -18,7 +18,7 @@ import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 @Service
-public class EmployeeProvidentFundServiceImpl implements ProvidentFundService {
+public class ProvidentFundServiceImpl implements ProvidentFundService {
     @Autowired
     ProvidentFundRepository employeeProvidentFundRepository;
 

@@ -7,8 +7,8 @@ import com.example.payroll.models.payroll.Employee;
 import com.example.payroll.models.payroll.EmployeeSalary;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
-import com.example.payroll.services.payroll.EmployeeSalaryService;
-import com.example.payroll.utils.Util;
+import com.example.payroll.services.payroll.SalaryService;
+import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +19,7 @@ import java.util.Optional;
 
 
 @Service
-public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
+public class SalaryServiceImpl implements SalaryService {
     @Autowired
     EmployeeSalaryRepository employeeSalaryRepository;
     @Autowired
@@ -27,6 +27,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
 
     @Override
     public EmployeeSalaryDto updateSalaryData(EmployeeSalaryDto employeeSalaryDto) throws GenericException {
+        //TODO check fromDate must be after the month of joining date
         EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(employeeSalaryDto.getEmployee().getId());
         Employee employee = null;
         if(employeeSalary!=null){
@@ -43,7 +44,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
             if(employee==null)employee=optionalEmployee.get();
         }
         EmployeeSalary employeeSalaryNew = new EmployeeSalary();
-        Util.copyProperty(employeeSalaryDto, employeeSalaryNew);
+        Utils.copyProperty(employeeSalaryDto, employeeSalaryNew);
 
         Double basic = employeeSalaryDto.getGrossSalary()*60/100.0;
         employeeSalaryNew.setBasicSalary(basic);
@@ -53,7 +54,9 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         employeeSalaryNew.setCreateTime(LocalDateTime.now());
         employeeSalaryNew.setEmployee(employee);
         employeeSalaryNew = employeeSalaryRepository.save(employeeSalaryNew);
-        Util.copyProperty(employeeSalaryNew, employeeSalaryDto);
+        Utils.copyProperty(employeeSalaryNew, employeeSalaryDto);
+
+        //TODO need to update payslip's info from this month to last month for this financial year
         return employeeSalaryDto;
     }
     @Override
@@ -70,7 +73,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         if(employeeId==null)throw new GenericException("EmployeeId should not be null!");
         EmployeeSalary employeeCurrentSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(employeeId);
         EmployeeSalaryDto employeeSalaryDto = new EmployeeSalaryDto();
-        Util.copyProperty(employeeCurrentSalary, employeeSalaryDto);
+        Utils.copyProperty(employeeCurrentSalary, employeeSalaryDto);
         return employeeSalaryDto;
     }
 }

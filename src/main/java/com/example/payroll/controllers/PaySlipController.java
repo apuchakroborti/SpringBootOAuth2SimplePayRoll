@@ -5,7 +5,7 @@ import com.example.payroll.dto.request.MonthlyPaySlipRequestDto;
 import com.example.payroll.dto.request.PayslipSearchCriteria;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.services.payroll.EmployeeMonthlyPaySlipService;
+import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -19,14 +19,14 @@ import javax.validation.Valid;
 public class PaySlipController {
 
     @Autowired
-    EmployeeMonthlyPaySlipService employeeMonthlyPaySlipService;
-
-    @PostMapping()
-    public ServiceResponse createPaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
-        return new ServiceResponse(null, employeeMonthlyPaySlipService.createPaySlip(monthlyPaySlipRequestDto), null);
+    MonthlyPaySlipService monthlyPaySlipService;
+    //TODO need to add description about all of these endpoints
+    @PostMapping
+    public ServiceResponse geneartePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
+        return new ServiceResponse(null, monthlyPaySlipService.geneartePaySlip(monthlyPaySlipRequestDto), null);
     }
-    @GetMapping()
+    @GetMapping
     public ServiceResponse getPaySlipBySearchCriteria(PayslipSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable) throws GenericException{
-        return Utils.pageToServiceResponse(employeeMonthlyPaySlipService.getPaySlipWithInDateRangeAndEmployeeId(criteria, pageable), MonthlyPaySlipDto.class);
+        return Utils.pageToServiceResponse(monthlyPaySlipService.getPaySlipWithInDateRangeAndEmployeeId(criteria, pageable), MonthlyPaySlipDto.class);
     }
 }

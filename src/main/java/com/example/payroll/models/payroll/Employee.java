@@ -1,17 +1,17 @@
 package com.example.payroll.models.payroll;
 
 import com.example.payroll.security_oauth2.models.security.User;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data
+//using @Getter and @Setter instead of @Data to remove recursive toString method
 @Entity
 @Table(name = "EMPLOYEE")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Employee extends EntityCommon {

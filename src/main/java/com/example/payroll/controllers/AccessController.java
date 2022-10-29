@@ -15,6 +15,7 @@ public class AccessController {
     @Autowired
     AuthorityService authorityService;
 
+    //TODO need to add description about this endpoint
     @PostMapping("/addNewRoll")
     public ServiceResponse addNewAuthority(@RequestBody AuthorityModel authorityModel) throws Exception{
         return new ServiceResponse(null, authorityService.addNewAuthority(authorityModel), null);

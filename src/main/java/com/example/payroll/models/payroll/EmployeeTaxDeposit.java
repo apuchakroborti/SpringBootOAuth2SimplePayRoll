@@ -1,17 +1,20 @@
 package com.example.payroll.models.payroll;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.example.payroll.utils.TaxType;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 
+//using @Getter and @Setter instead of @Data to remove remove recursive toString and EqualsAndHashCode method
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "EMPLOYEE_TAX_DEPOSIT")
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "employee")
+@EqualsAndHashCode(exclude = "employee")
 public class EmployeeTaxDeposit extends EntityCommon {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -24,6 +27,9 @@ public class EmployeeTaxDeposit extends EntityCommon {
     @ManyToOne
     @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
     private Employee employee;
+
+    @Column(name = "TAX_TYPE", nullable = false)
+    private TaxType taxType;
 
     @Column(name = "AMOUNT", nullable = false)
     private Double amount;

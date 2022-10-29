@@ -13,6 +13,7 @@ import com.example.payroll.security_oauth2.models.security.Authority;
 import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.security_oauth2.repository.AuthorityRepository;
 import com.example.payroll.security_oauth2.repository.UserRepository;
+import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.specifications.EmployeeSearchSpecifications;
 import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.Role;
@@ -53,7 +54,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     EmployeeSalaryRepository employeeSalaryRepository;
 
     @Autowired
-    MonthlyPaySlipRepository monthlyPaySlipRepository;
+    MonthlyPaySlipService monthlyPaySlipService;
 
     @Autowired
     @Qualifier("userPasswordEncoder")
@@ -104,81 +105,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeSalary = employeeSalaryRepository.save(employeeSalary);
 
         //generate payslip for the current financial year
-        boolean res = generatePayslipForCurrentFinancialYear(employee, employeeSalary, employee.getDateOfJoining());
+        boolean res = monthlyPaySlipService.generatePayslipForCurrentFinancialYear(employee, employeeSalary, employee.getDateOfJoining());
 
         Utils.copyProperty(employee, employeeDto);
 
         return employeeDto;
     }
 
-    private Boolean generatePayslipForCurrentFinancialYear(Employee employee, EmployeeSalary employeeSalary, LocalDate joiningDate){
 
-        LocalDate toDate = null;
-
-        int month = joiningDate.getMonthValue();
-        int year = joiningDate.getYear();
-
-        if(month <=6){
-            toDate = LocalDate.of(year, 6, 30 );
-        }else{
-            toDate = LocalDate.of(year+1, 6, 30 );
-        }
-        List<MonthlyPaySlip> monthlyPaySlipList = new ArrayList<>();
-
-        MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
-        monthlyPaySlip = getBySettingAllValue(monthlyPaySlip, employeeSalary, joiningDate, joiningDate.with(lastDayOfMonth()));
-        monthlyPaySlipList.add(monthlyPaySlip);
-
-        joiningDate = joiningDate.with(lastDayOfMonth());
-        joiningDate = joiningDate.plusDays(1);
-
-        while(joiningDate.isBefore(toDate.plusDays(1))){
-            MonthlyPaySlip monthlyPaySlipNew = new MonthlyPaySlip();
-            monthlyPaySlipNew = getBySettingAllValue(monthlyPaySlipNew, employeeSalary, joiningDate.with(firstDayOfMonth()), joiningDate.with(lastDayOfMonth()));
-            monthlyPaySlipList.add(monthlyPaySlipNew);
-
-            joiningDate = joiningDate.with(lastDayOfMonth());
-            joiningDate = joiningDate.plusDays(1);
-        }
-
-        monthlyPaySlipRepository.saveAll(monthlyPaySlipList);
-
-
-        return true;
-    }
-    private MonthlyPaySlip getBySettingAllValue(MonthlyPaySlip monthlyPaySlip, EmployeeSalary employeeSalary, LocalDate fromDate, LocalDate toDate){
-        monthlyPaySlip.setEmployee(employeeSalary.getEmployee());
-
-        monthlyPaySlip.setGrossSalary(employeeSalary.getGrossSalary());
-        monthlyPaySlip.setBasicSalary(employeeSalary.getBasicSalary());//60 percent
-
-        monthlyPaySlip.setHouseRent(employeeSalary.getGrossSalary()*0.3);//30 percent
-        monthlyPaySlip.setConveyanceAllowance(employeeSalary.getGrossSalary()*0.045);//4.5 percent
-        monthlyPaySlip.setMedicalAllowance(employeeSalary.getGrossSalary()*0.055); // 5.5 percent
-
-        monthlyPaySlip.setFestivalBonus(0.0);
-
-        monthlyPaySlip.setDue(0.0);
-        monthlyPaySlip.setArrears(0.0);
-        monthlyPaySlip.setIncentiveBonus(0.0);
-        monthlyPaySlip.setOtherPay(0.0);
-
-        monthlyPaySlip.setProvidentFund(null);
-
-        monthlyPaySlip.setNetPayment(
-                        employeeSalary.getGrossSalary()+
-                        monthlyPaySlip.getDue()+
-                        monthlyPaySlip.getFestivalBonus()+
-                        monthlyPaySlip.getIncentiveBonus()+
-                        monthlyPaySlip.getOtherPay());
-
-        monthlyPaySlip.setFromDate(fromDate);
-        monthlyPaySlip.setToDate(toDate);
-
-        monthlyPaySlip.setCreatedBy(1l);
-        monthlyPaySlip.setCreateTime(LocalDateTime.now());
-        return monthlyPaySlip;
-    }
 
     @Override
     public EmployeeDto findByUsername(String username) throws GenericException{

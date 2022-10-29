@@ -24,6 +24,7 @@ public class EmployeeController {
     private final UserService userService;
     private final EmployeeService employeeService;
 
+    //TODO need to add description about all of these endpoints
     @Autowired
     EmployeeController(UserService userService, EmployeeService employeeService){
         this.userService = userService;
@@ -36,7 +37,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
-    @GetMapping()
+    @GetMapping
     public ServiceResponse searchEmployee(EmployeeSearchCriteria criteria, @PageableDefault(value = 10) Pageable pageable) throws GenericException {
         return Utils.pageToServiceResponse(employeeService.getEmployeeList(criteria, pageable), EmployeeDto.class);
     }

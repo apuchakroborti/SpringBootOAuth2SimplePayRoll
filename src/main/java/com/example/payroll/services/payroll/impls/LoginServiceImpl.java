@@ -9,7 +9,7 @@ import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.security_oauth2.repository.UserRepository;
 import com.example.payroll.services.payroll.LoginService;
 import com.example.payroll.utils.Defs;
-import com.example.payroll.utils.Util;
+import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +40,7 @@ public class LoginServiceImpl implements LoginService {
             if(passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
                 Optional<Employee> optionalEmployee = employeeRepository.findByEmail(loginRequestDto.getUsername());
                 if(optionalEmployee.isPresent()){
-                    Util.copyProperty(optionalEmployee.get(), employeeDto);
+                    Utils.copyProperty(optionalEmployee.get(), employeeDto);
                 }else{
                     employeeDto.setFirstName("Admin");
                     employeeDto.setLastName("Admin");
