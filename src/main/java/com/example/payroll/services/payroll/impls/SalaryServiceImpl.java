@@ -7,6 +7,7 @@ import com.example.payroll.models.payroll.Employee;
 import com.example.payroll.models.payroll.EmployeeSalary;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
+import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.services.payroll.SalaryService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class SalaryServiceImpl implements SalaryService {
     EmployeeSalaryRepository employeeSalaryRepository;
     @Autowired
     EmployeeRepository employeeRepository;
+
+    @Autowired
+    MonthlyPaySlipService monthlyPaySlipService;
 
     @Override
     public EmployeeSalaryDto updateSalaryData(EmployeeSalaryDto employeeSalaryDto) throws GenericException {
@@ -56,7 +60,8 @@ public class SalaryServiceImpl implements SalaryService {
         employeeSalaryNew = employeeSalaryRepository.save(employeeSalaryNew);
         Utils.copyProperty(employeeSalaryNew, employeeSalaryDto);
 
-        //TODO need to update payslip's info from this month to last month for this financial year
+        //update payslip's info from this month to last month for this financial year
+        monthlyPaySlipService.generatePayslipForCurrentFinancialYear(employee, employeeSalaryNew, employeeSalaryDto.getFromDate());
         return employeeSalaryDto;
     }
     @Override

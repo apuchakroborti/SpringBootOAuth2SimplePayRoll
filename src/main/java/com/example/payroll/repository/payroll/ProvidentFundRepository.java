@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 public interface ProvidentFundRepository extends CrudRepository<ProvidentFund, Long> {
     @Query(value="  select pf " +
@@ -20,4 +21,6 @@ public interface ProvidentFundRepository extends CrudRepository<ProvidentFund, L
             @Param("toDate") LocalDate toDate,
             @Param("employeeId") Long employeeId,
             Pageable pageable);
+
+    Optional<ProvidentFund> getByEmployeeIdAndFromDateAndToDate(Long employeeId, LocalDate fromDate, LocalDate toDate);
 }

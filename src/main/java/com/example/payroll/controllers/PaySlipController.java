@@ -22,7 +22,7 @@ public class PaySlipController {
     MonthlyPaySlipService monthlyPaySlipService;
     //TODO need to add description about all of these endpoints
     @PostMapping
-    public ServiceResponse geneartePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
+    public ServiceResponse generatePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
         return new ServiceResponse(null, monthlyPaySlipService.geneartePaySlip(monthlyPaySlipRequestDto), null);
     }
     @GetMapping

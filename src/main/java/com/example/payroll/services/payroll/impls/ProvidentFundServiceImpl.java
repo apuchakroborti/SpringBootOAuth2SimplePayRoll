@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
@@ -52,5 +53,10 @@ public class ProvidentFundServiceImpl implements ProvidentFundService {
                 criteria.getFromDate(), criteria.getToDate(), criteria.getEmployeeId(), pageable);
 
         return employeePFPage;
+    }
+
+    @Override
+    public Optional<ProvidentFund> getByEmployeeIdAndFromDateAndToDate(Long employeeId, LocalDate fromDate, LocalDate toDate){
+        return employeeProvidentFundRepository.getByEmployeeIdAndFromDateAndToDate(employeeId, fromDate, toDate);
     }
 }
