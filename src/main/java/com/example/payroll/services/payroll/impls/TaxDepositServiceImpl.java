@@ -12,6 +12,8 @@ import com.example.payroll.services.payroll.TaxDepositService;
 import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.TaxType;
 import com.example.payroll.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,7 @@ import java.util.Optional;
 
 @Service
 public class TaxDepositServiceImpl implements TaxDepositService {
+    Logger logger = LoggerFactory.getLogger(TaxDepositServiceImpl.class);
 
     @Autowired
     TaxDepositRepository taxDepositRepository;
@@ -43,6 +46,7 @@ public class TaxDepositServiceImpl implements TaxDepositService {
         employeeTaxDeposit.setCreateTime(LocalDateTime.now());
 
         employeeTaxDeposit = taxDepositRepository.save(employeeTaxDeposit);
+        logger.info("Individual tax info saved.");
         Utils.copyProperty(employeeTaxDeposit, employeeTaxDepositDto);
         return employeeTaxDepositDto;
     }

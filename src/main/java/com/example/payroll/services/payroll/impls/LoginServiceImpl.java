@@ -10,6 +10,8 @@ import com.example.payroll.security_oauth2.repository.UserRepository;
 import com.example.payroll.services.payroll.LoginService;
 import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,8 @@ import java.util.Optional;
 
 @Service
 public class LoginServiceImpl implements LoginService {
+
+    Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
 
     @Autowired
     EmployeeRepository employeeRepository;

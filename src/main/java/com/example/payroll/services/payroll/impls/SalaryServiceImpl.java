@@ -10,6 +10,8 @@ import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
 import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.services.payroll.SalaryService;
 import com.example.payroll.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,8 @@ import java.util.Optional;
 
 @Service
 public class SalaryServiceImpl implements SalaryService {
+    Logger logger = LoggerFactory.getLogger(SalaryServiceImpl.class);
+
     @Autowired
     EmployeeSalaryRepository employeeSalaryRepository;
     @Autowired

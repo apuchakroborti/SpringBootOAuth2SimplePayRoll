@@ -6,6 +6,8 @@ import com.example.payroll.models.payroll.EmployeeSalary;
 import com.example.payroll.models.payroll.ProvidentFund;
 import com.example.payroll.repository.payroll.ProvidentFundRepository;
 import com.example.payroll.services.payroll.ProvidentFundService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 @Service
 public class ProvidentFundServiceImpl implements ProvidentFundService {
+    Logger logger = LoggerFactory.getLogger(ProvidentFundServiceImpl.class);
+
     @Autowired
     ProvidentFundRepository employeeProvidentFundRepository;
 

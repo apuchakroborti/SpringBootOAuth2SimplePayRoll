@@ -13,6 +13,8 @@ import com.example.payroll.services.payroll.TaxDepositService;
 import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.TaxType;
 import com.example.payroll.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +33,8 @@ import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 @Service
 @Transactional
 public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
+
+    Logger logger = LoggerFactory.getLogger(MonthlyPaySlipServiceImpl.class);
 
     private final MonthlyPaySlipRepository monthlyPaySlipRepository;
     private final ProvidentFundService providentFundService;
@@ -135,6 +139,10 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
             monthlyPaySlip.setProvidentFund(providentFund);
         }
         Utils.copyProperty(monthlyPaySlip, monthlyPaySlipDto);
+        logger.info("Payslip generated for the employeeId: {}, FromDate: {}, To date: {}",
+                optionalEmployee.get().getId(),
+                monthlyPaySlipRequestDto.getFromDate(),
+                monthlyPaySlipRequestDto.getToDate());
         return monthlyPaySlipDto;
 
     }
