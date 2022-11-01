@@ -3,11 +3,14 @@ package com.example.payroll.controllers;
 import com.example.payroll.dto.MonthlyPaySlipDto;
 import com.example.payroll.dto.request.MonthlyPaySlipRequestDto;
 import com.example.payroll.dto.request.PayslipSearchCriteria;
+import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
+import com.example.payroll.models.payroll.MonthlyPaySlip;
 import com.example.payroll.services.payroll.MonthlyPaySlipService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +25,16 @@ public class PaySlipController {
     MonthlyPaySlipService monthlyPaySlipService;
     //TODO need to add description about all of these endpoints
     @PostMapping
-    public ServiceResponse generatePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
-        return new ServiceResponse(null, monthlyPaySlipService.geneartePaySlip(monthlyPaySlipRequestDto), null);
+    public ServiceResponse<MonthlyPaySlipDto> generatePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
+        return monthlyPaySlipService.generatePaySlip(monthlyPaySlipRequestDto);
     }
     @GetMapping
-    public ServiceResponse getPaySlipBySearchCriteria(PayslipSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable) throws GenericException{
-        return Utils.pageToServiceResponse(monthlyPaySlipService.getPaySlipWithInDateRangeAndEmployeeId(criteria, pageable), MonthlyPaySlipDto.class);
+    public ServiceResponse<Page<MonthlyPaySlipDto>> getPaySlipBySearchCriteria(PayslipSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable) throws GenericException{
+
+        Page<MonthlyPaySlip> payslipPage = monthlyPaySlipService.getPaySlipWithInDateRangeAndEmployeeId(criteria, pageable);
+
+        return new ServiceResponse(Utils.getSuccessResponse(),
+                Utils.toDtoList(payslipPage, MonthlyPaySlipDto.class),
+                new Pagination(payslipPage.getTotalElements(), payslipPage.getNumberOfElements(), payslipPage.getNumber(), payslipPage.getSize()));
     }
 }

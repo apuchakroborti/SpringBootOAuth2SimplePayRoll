@@ -1,16 +1,19 @@
 package com.example.payroll.dto.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.springframework.http.HttpStatus;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
-@AllArgsConstructor
 public class Metadata implements Serializable {
-    String code;
-
-    String message;
-
-    String description;
+    private HttpStatus status;
+    private Integer code;
+    private List<ErrorModel> errorList;
+    public Metadata(HttpStatus status, List<ErrorModel> errorList){
+        this.status = status;
+        this.code = status.value();
+        this.errorList = errorList;
+    }
 }

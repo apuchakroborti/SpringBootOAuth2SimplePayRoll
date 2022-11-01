@@ -2,6 +2,7 @@ package com.example.payroll.services.payroll.impls;
 
 import com.example.payroll.dto.EmployeeTaxDepositDto;
 import com.example.payroll.dto.request.TaxSearchCriteria;
+import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.models.payroll.Employee;
 import com.example.payroll.models.payroll.EmployeeTaxDeposit;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -34,33 +36,46 @@ public class TaxDepositServiceImpl implements TaxDepositService {
     EmployeeRepository employeeRepository;
 
     @Override
-    public EmployeeTaxDepositDto insertIndividualTaxInfo(EmployeeTaxDepositDto employeeTaxDepositDto) throws GenericException{
-        Optional<Employee> optionalEmployee = employeeRepository.findById(employeeTaxDepositDto.getEmployee().getId());
-        if(!optionalEmployee.isPresent())throw new GenericException(Defs.USER_NOT_FOUND);
+    public ServiceResponse<EmployeeTaxDepositDto> insertIndividualTaxInfo(EmployeeTaxDepositDto employeeTaxDepositDto) throws GenericException{
+        try {
+            Optional<Employee> optionalEmployee = employeeRepository.findById(employeeTaxDepositDto.getEmployee().getId());
+            if (!optionalEmployee.isPresent()){
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "employee", Defs.EMPLOYEE_NOT_FOUND,
+                        "Please check employee id is correct"), null);
+            }
 
-        EmployeeTaxDeposit employeeTaxDeposit = new EmployeeTaxDeposit();
-        Utils.copyProperty(employeeTaxDepositDto, employeeTaxDeposit);
+            EmployeeTaxDeposit employeeTaxDeposit = new EmployeeTaxDeposit();
+            Utils.copyProperty(employeeTaxDepositDto, employeeTaxDeposit);
 
-        employeeTaxDeposit.setEmployee(optionalEmployee.get());
-        employeeTaxDeposit.setCreatedBy(1L);
-        employeeTaxDeposit.setCreateTime(LocalDateTime.now());
+            employeeTaxDeposit.setEmployee(optionalEmployee.get());
+            employeeTaxDeposit.setCreatedBy(1L);
+            employeeTaxDeposit.setCreateTime(LocalDateTime.now());
 
-        employeeTaxDeposit = taxDepositRepository.save(employeeTaxDeposit);
-        logger.info("Individual tax info saved.");
-        Utils.copyProperty(employeeTaxDeposit, employeeTaxDepositDto);
-        return employeeTaxDepositDto;
+            employeeTaxDeposit = taxDepositRepository.save(employeeTaxDeposit);
+
+            logger.info("Individual tax info saved employeeId: {}", employeeTaxDepositDto.getEmployee().getId());
+
+            Utils.copyProperty(employeeTaxDeposit, employeeTaxDepositDto);
+
+            return new ServiceResponse(Utils.getSuccessResponse(), employeeTaxDepositDto);
+        }catch (Exception e){
+            logger.error("Error occurred while inserting individual tax info, employeeId: {}", employeeTaxDepositDto.getEmployee().getId());
+            throw new GenericException("Internal server error", e);
+        }
     }
     @Override
-    public EmployeeTaxDeposit insertPayslipTaxInfo(MonthlyPaySlip monthlyPaySlip, Employee employee,
+    public ServiceResponse<EmployeeTaxDeposit> insertPayslipTaxInfo(MonthlyPaySlip monthlyPaySlip, Employee employee,
                                                    Double taxToDepositForTheRequestMonth, TaxType taxType,
                                                    LocalDate fromDate, LocalDate toDate)throws GenericException{
         try {
-
-
             Optional<EmployeeTaxDeposit> optionalTaxDeposit = taxDepositRepository.findByEmployeeIdAndFromDateAndToDateAndTaxType(
                     employee.getId(), fromDate, toDate, taxType
             );
-            if (optionalTaxDeposit.isPresent()) return optionalTaxDeposit.get();
+            if (optionalTaxDeposit.isPresent()){
+                return new ServiceResponse(Utils.getSuccessResponse(), optionalTaxDeposit.get());
+            }
 
             EmployeeTaxDeposit employeeTaxDeposit = new EmployeeTaxDeposit();
 
@@ -79,7 +94,8 @@ public class TaxDepositServiceImpl implements TaxDepositService {
             employeeTaxDeposit.setCreateTime(LocalDateTime.now());
 
             employeeTaxDeposit = taxDepositRepository.save(employeeTaxDeposit);
-            return employeeTaxDeposit;
+
+            return new ServiceResponse(Utils.getSuccessResponse(), employeeTaxDeposit);
         }catch (Exception e){
             throw new GenericException("Exception occurred while saving tax deposit info!");
         }

@@ -31,7 +31,7 @@
         </Root>
 
         <!-- LOG "com.baeldung*" at TRACE level -->
-        <Logger name="com.apu.payroll" level="trace"></Logger>
+        <Logger name="com.example.payroll" level="trace"></Logger>
     </Loggers>
 
 </Configuration>

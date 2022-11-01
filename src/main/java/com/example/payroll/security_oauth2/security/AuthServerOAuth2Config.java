@@ -1,5 +1,7 @@
 package com.example.payroll.security_oauth2.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +31,8 @@ import javax.sql.DataSource;
 @Import(ServerSecurityConfig.class)
 public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter {
 
+    Logger logger = LoggerFactory.getLogger(AuthServerOAuth2Config.class);
+
     @Autowired
     @Qualifier("dataSource")
     private DataSource dataSource;
@@ -36,6 +40,7 @@ public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Qualifier("userDetailService")
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -44,19 +49,19 @@ public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter
 
     @Bean
     public TokenStore tokenStore() {
-        System.out.println("Bean tokenStore called");
+        logger.info("Bean tokenStore called");
         return new JdbcTokenStore(dataSource);
     }
 
     @Bean
     public OAuth2AccessDeniedHandler oauthAccessDeniedHandler() {
-        System.out.println("Bean oauthAccessDeniedHandler called");
+        logger.info("Bean oauthAccessDeniedHandler called");
         return new OAuth2AccessDeniedHandler();
     }
 
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
-        System.out.println("Bean configure oauthServer called");
+        logger.info("Bean configure oauthServer called");
         oauthServer.tokenKeyAccess("permitAll()")
                 .checkTokenAccess("isAuthenticated()")
                 .passwordEncoder(oauthClientPasswordEncoder);
@@ -64,13 +69,13 @@ public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        System.out.println("Bean configure clients called");
+        logger.info("Bean configure clients called");
         clients.jdbc(dataSource);
     }
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
-        System.out.println("Bean configure endpoints called");
+        logger.info("Bean configure endpoints called");
         endpoints.tokenStore(tokenStore())
                 .authenticationManager(authenticationManager)
                 .userDetailsService(userDetailsService)
@@ -79,7 +84,7 @@ public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter
 
     @Bean
     public AuthorizationServerTokenServices tokenServices() {
-        System.out.println("Bean tokenServices called");
+        logger.info("Bean tokenServices called");
         DefaultTokenServices tokenServices = new DefaultTokenServices();
         tokenServices.setTokenStore(tokenStore());
         tokenServices.setTokenEnhancer(tokenEnhancer());
@@ -89,7 +94,7 @@ public class AuthServerOAuth2Config extends AuthorizationServerConfigurerAdapter
 
     @Bean
     public TokenEnhancer tokenEnhancer() {
-        System.out.println("Bean tokenEnhancer called");
+        logger.info("Bean tokenEnhancer called");
         return new CustomTokenEnhancer();
     }
 

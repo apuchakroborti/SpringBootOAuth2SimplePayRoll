@@ -1,5 +1,7 @@
 package com.example.payroll.utils;
 
+import com.example.payroll.dto.response.ErrorModel;
+import com.example.payroll.dto.response.Metadata;
 import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
 import org.modelmapper.ModelMapper;
@@ -7,6 +9,7 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -83,5 +86,13 @@ public abstract class Utils {
             remainingNumberOfMonth = 12 - currentDate.getMonth().getValue() + 1;
         }
         return remainingNumberOfMonth;
+    }
+    public static Metadata getSingleErrorBadRequest(List<ErrorModel> errorModelList, String field, String message, String description){
+        List<ErrorModel> errorModels = new ArrayList<>();
+        errorModels.add(new ErrorModel(field, message, description));
+        return new Metadata(HttpStatus.BAD_REQUEST,  errorModels);
+    }
+    public static Metadata getSuccessResponse(){
+        return new Metadata(HttpStatus.OK, null);
     }
 }

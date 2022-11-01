@@ -4,6 +4,7 @@ package com.example.payroll.services.payroll.impls;
 import com.example.payroll.dto.MonthlyPaySlipDto;
 import com.example.payroll.dto.request.MonthlyPaySlipRequestDto;
 import com.example.payroll.dto.request.PayslipSearchCriteria;
+import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.models.payroll.*;
 import com.example.payroll.repository.payroll.*;
@@ -60,97 +61,124 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
     }
 
     @Override
-    public MonthlyPaySlipDto geneartePaySlip(MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
-        Optional<Employee> optionalEmployee = employeeRepository.findById(monthlyPaySlipRequestDto.getEmployee().getId());
-        if(!optionalEmployee.isPresent())throw new GenericException(Defs.USER_NOT_FOUND);
-
-        LocalDate currDate = LocalDate.now();
-        if(monthlyPaySlipRequestDto.getFromDate().isAfter(currDate.with(lastDayOfMonth()))){
-            throw new GenericException("Payslip should be generated for the current or previous month!");
-        }
-
-        if(monthlyPaySlipRequestDto.getFromDate().getMonth().getValue()!=monthlyPaySlipRequestDto.getToDate().getMonth().getValue()){
-            throw new GenericException(Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_SAME_MONTH);
-        }
-
-        List<LocalDate> currentFinancialYear = Utils.getCurrentFinancialYear();
-        if(monthlyPaySlipRequestDto.getFromDate().isBefore(currentFinancialYear.get(0)) || monthlyPaySlipRequestDto.getToDate().isAfter(currentFinancialYear.get(1))){
-            throw new GenericException(Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_CURRENT_FINANCIAL_YEAR);
-        }
-
-        MonthlyPaySlipDto monthlyPaySlipDto = new MonthlyPaySlipDto();
-
-        Page<MonthlyPaySlip> page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
-                monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0,1));
-
-        EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(optionalEmployee.get().getId());
-
-        MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
-
-        if(page.getTotalElements()==0){
-            //generate payslip for the current financial year
-            Boolean res = this.generatePayslipForCurrentFinancialYear(optionalEmployee.get(), employeeSalary, currentFinancialYear.get(0));
-            if(!res){
-                throw new GenericException(Defs.INTERNAL_SERVER_ERROR);
+    public ServiceResponse<MonthlyPaySlipDto> generatePaySlip(MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
+        try {
+            Optional<Employee> optionalEmployee = employeeRepository.findById(monthlyPaySlipRequestDto.getEmployee().getId());
+            if (!optionalEmployee.isPresent()) {
+                logger.info("Employee not found with id: {}", monthlyPaySlipRequestDto.getEmployee().getId());
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "employee", Defs.EMPLOYEE_NOT_FOUND,
+                        "Please check employee id is correct"), null);
             }
 
-            page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
-                    monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0,1));
+            LocalDate currDate = LocalDate.now();
+            if (monthlyPaySlipRequestDto.getFromDate().isAfter(currDate.with(lastDayOfMonth()))) {
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "fromDate", Defs.EMPLOYEE_NOT_FOUND,
+                        "Payslip should be generated for the current or previous month!"), null);
+            }
 
-            monthlyPaySlip = page.getContent().get(0);
+            if (monthlyPaySlipRequestDto.getFromDate().getMonth().getValue() != monthlyPaySlipRequestDto.getToDate().getMonth().getValue()) {
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "fromDate", Defs.EMPLOYEE_NOT_FOUND,
+                        Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_SAME_MONTH), null);
+            }
 
-        }else{
-            monthlyPaySlip = page.getContent().get(0);
-        }
+            List<LocalDate> currentFinancialYear = Utils.getCurrentFinancialYear();
+            if (monthlyPaySlipRequestDto.getFromDate().isBefore(currentFinancialYear.get(0)) || monthlyPaySlipRequestDto.getToDate().isAfter(currentFinancialYear.get(1))) {
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "fromDate", Defs.EMPLOYEE_NOT_FOUND,
+                        Defs.PAYSLIP_FROM_TO_DATE_MUST_BE_CURRENT_FINANCIAL_YEAR), null);
+            }
 
-        //check tax deposited for this month or not
-        //need to check the tax already deposited for this month or not
-        Optional<EmployeeTaxDeposit> depositOptional = taxDepositRepository.findByEmployeeIdAndFromDateAndToDateAndTaxType(
-                optionalEmployee.get().getId(),
-                monthlyPaySlipRequestDto.getFromDate(),
-                monthlyPaySlipRequestDto.getToDate(),
-                TaxType.FROM_COMPANY);
+            MonthlyPaySlipDto monthlyPaySlipDto = new MonthlyPaySlipDto();
 
-        if(!depositOptional.isPresent()){
-            //if no then insert tax info
-            //this is to store the monthly tax deposit from company
-            Double taxToDepositForTheRequestMonth = this.getMonthlyTaxDepositAmount(optionalEmployee.get(), monthlyPaySlipRequestDto.getFromDate());
+            Page<MonthlyPaySlip> page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+                    monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0, 1));
 
-            //deposit monthly tax
-            taxDepositService.insertPayslipTaxInfo(page.getContent().get(0),
-                    optionalEmployee.get(),
-                    taxToDepositForTheRequestMonth,
-                    TaxType.FROM_COMPANY,
+            EmployeeSalary employeeSalary = employeeSalaryRepository.getEmployeeCurrentSalaryByEmployeeId(optionalEmployee.get().getId());
+
+            MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
+
+            if (page.getTotalElements() == 0) {
+                try {
+                    //generate payslip for the current financial year
+                    this.generatePayslipForCurrentFinancialYear(optionalEmployee.get(), employeeSalary, currentFinancialYear.get(0));
+                } catch (GenericException e) {
+                    logger.error("Exception occurred while generating payslip for the current financial year, message: {}", e.getMessage());
+                    throw e;
+                }
+
+                page = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+                        monthlyPaySlipRequestDto.getFromDate(), monthlyPaySlipRequestDto.getToDate(), optionalEmployee.get().getId(), PageRequest.of(0, 1));
+
+                monthlyPaySlip = page.getContent().get(0);
+
+            } else {
+                monthlyPaySlip = page.getContent().get(0);
+            }
+
+            //check tax deposited for this month or not
+            //need to check the tax already deposited for this month or not
+            Optional<EmployeeTaxDeposit> depositOptional = taxDepositRepository.findByEmployeeIdAndFromDateAndToDateAndTaxType(
+                    optionalEmployee.get().getId(),
+                    monthlyPaySlipRequestDto.getFromDate(),
+                    monthlyPaySlipRequestDto.getToDate(),
+                    TaxType.FROM_COMPANY);
+
+            if (!depositOptional.isPresent()) {
+                //if no then insert tax info
+                //this is to store the monthly tax deposit from company
+                Double taxToDepositForTheRequestMonth = this.getMonthlyTaxDepositAmount(optionalEmployee.get(), monthlyPaySlipRequestDto.getFromDate());
+
+                //deposit monthly tax
+                taxDepositService.insertPayslipTaxInfo(page.getContent().get(0),
+                        optionalEmployee.get(),
+                        taxToDepositForTheRequestMonth,
+                        TaxType.FROM_COMPANY,
+                        monthlyPaySlipRequestDto.getFromDate(),
+                        monthlyPaySlipRequestDto.getToDate());
+            }
+
+            //check provident fund deposited for this month or not
+            Optional<ProvidentFund> providentFundOptional = providentFundService.getByEmployeeIdAndFromDateAndToDate(
+                    optionalEmployee.get().getId(),
                     monthlyPaySlipRequestDto.getFromDate(),
                     monthlyPaySlipRequestDto.getToDate());
 
+            //if not then insert provident fund data for this month
+            if (!providentFundOptional.isPresent()) {
+                ProvidentFund providentFund = providentFundService.insertPfData(employeeSalary, monthlyPaySlipRequestDto.getFromDate());
+                monthlyPaySlip.setProvidentFund(providentFund);
+            }
+            Utils.copyProperty(monthlyPaySlip, monthlyPaySlipDto);
+            logger.info("Payslip generated for the employeeId: {}, FromDate: {}, To date: {}",
+                    optionalEmployee.get().getId(),
+                    monthlyPaySlipRequestDto.getFromDate(),
+                    monthlyPaySlipRequestDto.getToDate());
+            return new ServiceResponse(Utils.getSuccessResponse(), monthlyPaySlipDto);
+
+        }catch (GenericException e){
+            throw e;
+        }catch (Exception e){
+            logger.error("Exception occurred while generating payslip, message: {}", e.getMessage());
+            throw new GenericException(e.getMessage(), e);
         }
-
-
-        //check provident fund deposited for this month or not
-        Optional<ProvidentFund> providentFundOptional = providentFundService.getByEmployeeIdAndFromDateAndToDate(
-                optionalEmployee.get().getId(),
-                monthlyPaySlipRequestDto.getFromDate(),
-                monthlyPaySlipRequestDto.getToDate());
-
-        //if not then insert provident fund data for this month
-        if(!providentFundOptional.isPresent()){
-            ProvidentFund providentFund = providentFundService.insertPfData(employeeSalary, monthlyPaySlipRequestDto.getFromDate());
-            monthlyPaySlip.setProvidentFund(providentFund);
-        }
-        Utils.copyProperty(monthlyPaySlip, monthlyPaySlipDto);
-        logger.info("Payslip generated for the employeeId: {}, FromDate: {}, To date: {}",
-                optionalEmployee.get().getId(),
-                monthlyPaySlipRequestDto.getFromDate(),
-                monthlyPaySlipRequestDto.getToDate());
-        return monthlyPaySlipDto;
-
     }
     @Override
     public Page<MonthlyPaySlip> getPaySlipWithInDateRangeAndEmployeeId(PayslipSearchCriteria criteria, Pageable pageable) throws GenericException{
-        Page<MonthlyPaySlip> employeeMonthlyPaySlipPage = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
-                criteria.getFromDate(), criteria.getToDate(), criteria.getEmployeeId(), pageable);
-        return employeeMonthlyPaySlipPage;
+        try {
+            Page<MonthlyPaySlip> employeeMonthlyPaySlipPage = monthlyPaySlipRepository.getEmployeeMonthlyPaySlipByDateRangeAndEmployeeId(
+                    criteria.getFromDate(), criteria.getToDate(), criteria.getEmployeeId(), pageable);
+            return employeeMonthlyPaySlipPage;
+        }catch (Exception e){
+            logger.error("Error occurred while fetching payslip!");
+            throw new GenericException(e.getMessage(),e);
+        }
     }
 
     //TODO need to use this calculation where needed
@@ -359,38 +387,39 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
     }
 
     @Override
-    public Boolean generatePayslipForCurrentFinancialYear(Employee employee, EmployeeSalary employeeSalary, LocalDate fromDate) throws GenericException{
+    public void generatePayslipForCurrentFinancialYear(Employee employee, EmployeeSalary employeeSalary, LocalDate fromDate) throws GenericException{
+        try {
+            LocalDate toDate = null;
+            int month = fromDate.getMonthValue();
+            int year = fromDate.getYear();
 
-        LocalDate toDate = null;
-        int month = fromDate.getMonthValue();
-        int year =fromDate.getYear();
+            if (month <= 6) {
+                toDate = LocalDate.of(year, 6, 30);
+            } else {
+                toDate = LocalDate.of(year + 1, 6, 30);
+            }
+            List<MonthlyPaySlip> monthlyPaySlipList = new ArrayList<>();
 
-        if(month <=6){
-            toDate = LocalDate.of(year, 6, 30 );
-        }else{
-            toDate = LocalDate.of(year+1, 6, 30 );
-        }
-        List<MonthlyPaySlip> monthlyPaySlipList = new ArrayList<>();
-
-        MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
-        monthlyPaySlip = getBySettingAllValue(monthlyPaySlip, employeeSalary, fromDate, fromDate.with(lastDayOfMonth()));
-        monthlyPaySlipList.add(monthlyPaySlip);
-
-        fromDate = fromDate.with(lastDayOfMonth());
-        fromDate = fromDate.plusDays(1);
-
-        while(fromDate.isBefore(toDate.plusDays(1))){
-            MonthlyPaySlip monthlyPaySlipNew = new MonthlyPaySlip();
-            monthlyPaySlipNew = getBySettingAllValue(monthlyPaySlipNew, employeeSalary, fromDate.with(firstDayOfMonth()), fromDate.with(lastDayOfMonth()));
-            monthlyPaySlipList.add(monthlyPaySlipNew);
+            MonthlyPaySlip monthlyPaySlip = new MonthlyPaySlip();
+            monthlyPaySlip = getBySettingAllValue(monthlyPaySlip, employeeSalary, fromDate, fromDate.with(lastDayOfMonth()));
+            monthlyPaySlipList.add(monthlyPaySlip);
 
             fromDate = fromDate.with(lastDayOfMonth());
             fromDate = fromDate.plusDays(1);
+
+            while (fromDate.isBefore(toDate.plusDays(1))) {
+                MonthlyPaySlip monthlyPaySlipNew = new MonthlyPaySlip();
+                monthlyPaySlipNew = getBySettingAllValue(monthlyPaySlipNew, employeeSalary, fromDate.with(firstDayOfMonth()), fromDate.with(lastDayOfMonth()));
+                monthlyPaySlipList.add(monthlyPaySlipNew);
+
+                fromDate = fromDate.with(lastDayOfMonth());
+                fromDate = fromDate.plusDays(1);
+            }
+
+            monthlyPaySlipRepository.saveAll(monthlyPaySlipList);
+        }catch (Exception e){
+            throw new GenericException(e.getMessage(), e);
         }
-
-        monthlyPaySlipRepository.saveAll(monthlyPaySlipList);
-
-        return true;
     }
     private MonthlyPaySlip getBySettingAllValue(MonthlyPaySlip monthlyPaySlip, EmployeeSalary employeeSalary, LocalDate fromDate, LocalDate toDate){
         monthlyPaySlip.setEmployee(employeeSalary.getEmployee());

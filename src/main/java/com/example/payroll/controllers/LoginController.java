@@ -1,5 +1,6 @@
 package com.example.payroll.controllers;
 
+import com.example.payroll.dto.EmployeeDto;
 import com.example.payroll.dto.request.LoginRequestDto;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
@@ -20,7 +21,7 @@ public class LoginController {
     LoginService loginService;
 
     @PostMapping
-    public ServiceResponse checkLoginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws GenericException {
-        return new ServiceResponse(null, loginService.checkLoginUser(loginRequestDto));
+    public ServiceResponse<EmployeeDto> checkLoginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws GenericException {
+        return loginService.checkLoginUser(loginRequestDto);
     }
 }

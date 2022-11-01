@@ -6,6 +6,8 @@ import com.example.payroll.dto.EmployeeDto;
 import com.example.payroll.security_oauth2.models.security.Authority;
 import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.services.EmployeeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
@@ -20,13 +22,15 @@ import java.util.stream.Collectors;
 @Configuration
 public class CustomTokenEnhancer implements TokenEnhancer {
 
+    Logger logger = LoggerFactory.getLogger(CustomTokenEnhancer.class);
+
     @Autowired
     private EmployeeService employeeService;
 
 
     @Override
     public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-        System.out.println("CustomTokenEnhancer enhance called");
+        logger.info("CustomTokenEnhancer enhance called");
         User user = (User) authentication.getPrincipal();
         final Map<String, Object> additionalInfo = new HashMap<>();
 

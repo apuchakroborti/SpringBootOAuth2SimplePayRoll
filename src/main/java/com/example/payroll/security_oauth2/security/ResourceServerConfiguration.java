@@ -1,5 +1,7 @@
 package com.example.payroll.security_oauth2.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,6 +12,8 @@ import org.springframework.security.oauth2.config.annotation.web.configurers.Res
 @Configuration
 @EnableResourceServer
 public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
+
+    Logger logger = LoggerFactory.getLogger(ResourceServerConfiguration.class);
 
     private static final String[] AUTH_WHITELIST = {
             // -- swagger ui
@@ -27,13 +31,13 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) {
-        System.out.println("resources called");
+        logger.info("resources called");
         resources.resourceId(RESOURCE_ID);
     }
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-        System.out.println("http called");
+        logger.info("http called");
 //        http.cors().and();
         http.csrf().disable().requestMatchers()
                 .antMatchers(SECURED_PATTERN).and().authorizeRequests()

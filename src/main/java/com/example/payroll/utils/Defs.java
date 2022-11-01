@@ -2,6 +2,7 @@ package com.example.payroll.utils;
 
 public class Defs {
     public static final String USER_NOT_FOUND = "User not found";
+    public static final String EMPLOYEE_NOT_FOUND = "Employee not found";
     public static final String USER_INACTIVE = "User not active";
     public static final String USER_ALREADY_EXISTS = "User already Exists";
     public static final String PASSWORD_MISMATCHED = "Password mismatched!";

@@ -2,6 +2,7 @@ package com.example.payroll.services.payroll.impls;
 
 import com.example.payroll.dto.EmployeeDto;
 import com.example.payroll.dto.request.LoginRequestDto;
+import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.models.payroll.Employee;
 import com.example.payroll.repository.payroll.EmployeeRepository;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -35,26 +37,36 @@ public class LoginServiceImpl implements LoginService {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public EmployeeDto checkLoginUser(LoginRequestDto loginRequestDto) throws GenericException {
-        EmployeeDto employeeDto = new EmployeeDto();
+    public ServiceResponse<EmployeeDto> checkLoginUser(LoginRequestDto loginRequestDto) throws GenericException {
+        try {
+            EmployeeDto employeeDto = new EmployeeDto();
 
-
-        Optional<User> optionalUser = userRepository.findByUsername(loginRequestDto.getUsername());
-        if(optionalUser.isPresent()){
-            if(passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
-                Optional<Employee> optionalEmployee = employeeRepository.findByEmail(loginRequestDto.getUsername());
-                if(optionalEmployee.isPresent()){
-                    Utils.copyProperty(optionalEmployee.get(), employeeDto);
-                }else{
-                    employeeDto.setFirstName("Admin");
-                    employeeDto.setLastName("Admin");
+            Optional<User> optionalUser = userRepository.findByUsername(loginRequestDto.getUsername());
+            if (optionalUser.isPresent()) {
+                if (passwordEncoder.matches(loginRequestDto.getPassword(), optionalUser.get().getPassword())) {
+                    Optional<Employee> optionalEmployee = employeeRepository.findByEmail(loginRequestDto.getUsername());
+                    if (optionalEmployee.isPresent()) {
+                        Utils.copyProperty(optionalEmployee.get(), employeeDto);
+                    } else {
+                        employeeDto.setFirstName("Admin");
+                        employeeDto.setLastName("Admin");
+                    }
+                } else {
+                    return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                            new ArrayList<>(),
+                            "password", Defs.PASSWORD_MISMATCHED,
+                            "Please check password is correct"), null);
                 }
             } else {
-                throw new GenericException(Defs.PASSWORD_MISMATCHED);
+                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
+                        new ArrayList<>(),
+                        "username", Defs.USER_NOT_FOUND,
+                        "Please check username is correct"), null);
             }
-        }else{
-            throw new GenericException(Defs.USER_NOT_FOUND);
+            return new ServiceResponse(Utils.getSuccessResponse(), employeeDto);
+        }catch (Exception e){
+            logger.error("Exception occurred while checking login user, message: {}", e.getMessage());
+            throw new GenericException(e.getMessage(), e);
         }
-        return employeeDto;
     }
 }
