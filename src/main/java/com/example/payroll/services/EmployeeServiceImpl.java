@@ -144,13 +144,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeDto findByUsername(String username) throws GenericException{
 
-        Optional<Employee> optionalEmployee = employeeRepository.findByEmail(username);
-        if(!optionalEmployee.isPresent() || optionalEmployee.get().getStatus().equals(false)){
-            return null;
+        try {
+            Optional<Employee> optionalEmployee = employeeRepository.findByEmail(username);
+            if (!optionalEmployee.isPresent() || optionalEmployee.get().getStatus().equals(false)) {
+                return null;
+            }
+            EmployeeDto employeeDto = new EmployeeDto();
+            Utils.copyProperty(optionalEmployee.get(), employeeDto);
+            return employeeDto;
+        }catch (Exception e){
+            logger.error("Error while finding employee by username: {}", username);
+            throw new GenericException(e.getMessage());
         }
-        EmployeeDto employeeDto = new EmployeeDto();
-        Utils.copyProperty(optionalEmployee, employeeDto);
-        return employeeDto;
     }
     @Override
     public ServiceResponse<EmployeeDto> findEmployeeById(Long id) throws GenericException{

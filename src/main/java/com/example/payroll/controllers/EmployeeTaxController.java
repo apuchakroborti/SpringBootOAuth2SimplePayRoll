@@ -23,11 +23,11 @@ public class EmployeeTaxController {
     TaxDepositService taxDepositService;
 
     @PostMapping
-    public ServiceResponse insertTaxInfo(@Valid @RequestBody EmployeeTaxDepositDto employeeTaxDepositModel) throws GenericException {
+    public ServiceResponse<EmployeeTaxDepositDto> insertTaxInfo(@Valid @RequestBody EmployeeTaxDepositDto employeeTaxDepositModel) throws GenericException {
         return taxDepositService.insertIndividualTaxInfo(employeeTaxDepositModel);
     }
     @GetMapping("/{employeeId}")
-    public ServiceResponse getAllTaxInfoByEmployeeId(@PathVariable("employeeId") Long employeeId, @PageableDefault(value = 12) Pageable pageable){
+    public ServiceResponse<Page<EmployeeTaxDepositDto>> getAllTaxInfoByEmployeeId(@PathVariable("employeeId") Long employeeId, @PageableDefault(value = 12) Pageable pageable){
         Page<EmployeeTaxDeposit> taxDepositPage = taxDepositService.getAllTaxInfoByEmployeeId(employeeId, pageable);
 
         return new ServiceResponse(Utils.getSuccessResponse(),
@@ -35,7 +35,7 @@ public class EmployeeTaxController {
                 new Pagination(taxDepositPage.getTotalElements(), taxDepositPage.getNumberOfElements(), taxDepositPage.getNumber(), taxDepositPage.getSize()));
     }
     @GetMapping
-    public ServiceResponse getAllTaxInfo(TaxSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable){
+    public ServiceResponse<Page<EmployeeTaxDeposit>> getAllTaxInfo(TaxSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable){
         Page<EmployeeTaxDeposit> taxDepositPage = taxDepositService.getTaxInfoWithInDateRangeAndEmployeeId(criteria, pageable);
 
         return new ServiceResponse(Utils.getSuccessResponse(),

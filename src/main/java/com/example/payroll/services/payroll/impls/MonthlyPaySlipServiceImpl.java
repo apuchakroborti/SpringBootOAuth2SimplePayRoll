@@ -221,7 +221,7 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
             throw new GenericException("Internal server error! Contact with admin!, message: "+e.getMessage());
         }
     }
-    //TODO need to implement
+
     private Double getTotalEstimatedTaxableIncomeBasedOnSalary(Employee employee, LocalDate fromDate, LocalDate toDate){
         EmployeeSalary employeeSalary = employee.getEmployeeSalaryList()
                 .stream()
@@ -308,9 +308,9 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
             return totalTaxableIncome;
 
         }catch (NullPointerException e){
-            System.out.println("Need to general monthly payslip for this employee for the current financial year");
+            logger.info("Need to general monthly payslip for this employee:{} for the current financial year", employee.getId());
         }catch (Exception e){
-            System.out.println("Internal server error! please contact with admin!");
+            logger.info("Internal server error! please contact with admin!");
         }finally {
             return 0.0;
         }

@@ -35,10 +35,15 @@ public class TaxDepositServiceImpl implements TaxDepositService {
     @Autowired
     EmployeeRepository employeeRepository;
 
+    //An employee can save his/her tax info only
     @Override
     public ServiceResponse<EmployeeTaxDepositDto> insertIndividualTaxInfo(EmployeeTaxDepositDto employeeTaxDepositDto) throws GenericException{
         try {
-            Optional<Employee> optionalEmployee = employeeRepository.findById(employeeTaxDepositDto.getEmployee().getId());
+            Optional<Employee> employee = employeeRepository.getLoggedInEmployee();
+
+            Optional<Employee> optionalEmployee = employeeRepository.findById(
+                    employee.isPresent() ? employee.get().getId(): employeeTaxDepositDto.getEmployee().getId()
+            );
             if (!optionalEmployee.isPresent()){
                 return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
                         new ArrayList<>(),
@@ -65,14 +70,19 @@ public class TaxDepositServiceImpl implements TaxDepositService {
             throw new GenericException("Internal server error", e);
         }
     }
+
+    //An employee can save his/her tax info only
     @Override
     public ServiceResponse<EmployeeTaxDeposit> insertPayslipTaxInfo(MonthlyPaySlip monthlyPaySlip, Employee employee,
                                                    Double taxToDepositForTheRequestMonth, TaxType taxType,
                                                    LocalDate fromDate, LocalDate toDate)throws GenericException{
         try {
+            Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
+
             Optional<EmployeeTaxDeposit> optionalTaxDeposit = taxDepositRepository.findByEmployeeIdAndFromDateAndToDateAndTaxType(
-                    employee.getId(), fromDate, toDate, taxType
-            );
+                    loggedInEmployee.isPresent() ? loggedInEmployee.get().getId() : employee.getId(),
+                    fromDate, toDate, taxType);
+
             if (optionalTaxDeposit.isPresent()){
                 return new ServiceResponse(Utils.getSuccessResponse(), optionalTaxDeposit.get());
             }
@@ -100,15 +110,22 @@ public class TaxDepositServiceImpl implements TaxDepositService {
             throw new GenericException("Exception occurred while saving tax deposit info!");
         }
     }
+
+    //An employee can see his/her tax info only
     @Override
     public Page<EmployeeTaxDeposit> getAllTaxInfoByEmployeeId(Long employeeId, Pageable pageable){
-        Page<EmployeeTaxDeposit> employeeTaxDepositPage = taxDepositRepository.findAllByEmployeeId(employeeId, pageable);
+        Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
+
+        Page<EmployeeTaxDeposit> employeeTaxDepositPage = taxDepositRepository.findAllByEmployeeId(
+                loggedInEmployee.isPresent()?loggedInEmployee.get().getId():employeeId, pageable);
         return employeeTaxDepositPage;
     }
+    //An employee can see his/her tax info only
     @Override
     public Page<EmployeeTaxDeposit> getTaxInfoWithInDateRangeAndEmployeeId(TaxSearchCriteria criteria, Pageable pageable){
+        Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
         Page<EmployeeTaxDeposit> taxInfoPage = taxDepositRepository.getAllByEmployeeIdAndFromDateAndToDate(
-                criteria.getFromDate(), criteria.getToDate(), criteria.getEmployeeId(), pageable);
+                criteria.getFromDate(), criteria.getToDate(), loggedInEmployee.isPresent()?loggedInEmployee.get().getId():criteria.getEmployeeId(), pageable);
 
         return taxInfoPage;
     }

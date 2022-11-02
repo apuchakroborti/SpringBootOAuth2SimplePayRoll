@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -29,10 +30,13 @@ public class PaySlipController {
     * Monthly draft payslip will be generate for the current financial year but final for the starting of the financial year to current month
     * Tax and Provident fund will be deducted from salary and will be inserted into TaxDeposit and Provident fund table respectively
     * */
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping
     public ServiceResponse<MonthlyPaySlipDto> generatePaySlip(@Valid @RequestBody MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException {
         return monthlyPaySlipService.generatePaySlip(monthlyPaySlipRequestDto);
     }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'EMPLOYEE')")
     @GetMapping
     public ServiceResponse<Page<MonthlyPaySlipDto>> getPaySlipBySearchCriteria(PayslipSearchCriteria criteria, @PageableDefault(value = 12) Pageable pageable) throws GenericException{
 

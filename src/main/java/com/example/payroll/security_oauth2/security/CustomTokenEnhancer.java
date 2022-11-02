@@ -41,7 +41,8 @@ public class CustomTokenEnhancer implements TokenEnhancer {
             e.printStackTrace();
         }
         if(loginInfoDto != null) {
-            additionalInfo.put("userId", loginInfoDto.getId());
+            additionalInfo.put("id", loginInfoDto.getId());
+            additionalInfo.put("userId", loginInfoDto.getUserId());
         }
 
         additionalInfo.put("authorities", user.getAuthorities()
