@@ -20,6 +20,10 @@ public class LoginController {
     @Autowired
     LoginService loginService;
 
+    /*
+    * this API is for checking the user is valid by username and password
+    * @response: employee details
+    * */
     @PostMapping
     public ServiceResponse<EmployeeDto> checkLoginUser(@Valid @RequestBody LoginRequestDto loginRequestDto) throws GenericException {
         return loginService.checkLoginUser(loginRequestDto);

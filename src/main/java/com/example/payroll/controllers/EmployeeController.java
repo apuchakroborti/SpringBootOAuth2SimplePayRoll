@@ -28,12 +28,18 @@ public class EmployeeController {
     private final UserService userService;
     private final EmployeeService employeeService;
 
-    //TODO need to add description about all of these endpoints
     @Autowired
     EmployeeController(UserService userService, EmployeeService employeeService){
         this.userService = userService;
         this.employeeService = employeeService;
     }
+    /*
+    * This is for enrolling new employee but only admin can create a new employee
+    * while creating an employee gross salary must be given
+    * monthly draft payslip will be created also
+    * salary table will have a new entry for this employee
+    * */
+
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PostMapping
     public ServiceResponse<EmployeeDto> enrollEmployee(@Valid @RequestBody EmployeeDto customUserDto) throws GenericException {

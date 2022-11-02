@@ -54,14 +54,14 @@ public class LoginServiceImpl implements LoginService {
                 } else {
                     return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
                             new ArrayList<>(),
-                            "password", Defs.PASSWORD_MISMATCHED,
-                            "Please check password is correct"), null);
+                            "username, password", null,
+                            "Please check username or password is incorrect"), null);
                 }
             } else {
                 return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
                         new ArrayList<>(),
-                        "username", Defs.USER_NOT_FOUND,
-                        "Please check username is correct"), null);
+                        "username, password", null,
+                        "Please check username or password is incorrect"), null);
             }
             return new ServiceResponse(Utils.getSuccessResponse(), employeeDto);
         }catch (Exception e){

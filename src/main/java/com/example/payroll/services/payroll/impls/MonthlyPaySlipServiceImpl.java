@@ -121,7 +121,7 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
             } else {
                 monthlyPaySlip = page.getContent().get(0);
             }
-
+            monthlyPaySlip.setNetPayment(monthlyPaySlip.getGrossSalary());
             //check tax deposited for this month or not
             //need to check the tax already deposited for this month or not
             Optional<EmployeeTaxDeposit> depositOptional = taxDepositRepository.findByEmployeeIdAndFromDateAndToDateAndTaxType(
@@ -142,6 +142,7 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
                         TaxType.FROM_COMPANY,
                         monthlyPaySlipRequestDto.getFromDate(),
                         monthlyPaySlipRequestDto.getToDate());
+                monthlyPaySlip.setNetPayment(monthlyPaySlip.getNetPayment()-taxToDepositForTheRequestMonth);
             }
 
             //check provident fund deposited for this month or not
@@ -154,7 +155,10 @@ public class MonthlyPaySlipServiceImpl implements MonthlyPaySlipService {
             if (!providentFundOptional.isPresent()) {
                 ProvidentFund providentFund = providentFundService.insertPfData(employeeSalary, monthlyPaySlipRequestDto.getFromDate());
                 monthlyPaySlip.setProvidentFund(providentFund);
+                monthlyPaySlip.setNetPayment(monthlyPaySlip.getNetPayment()-providentFund.getEmployeeContribution());
             }
+            monthlyPaySlip = monthlyPaySlipRepository.save(monthlyPaySlip);
+
             Utils.copyProperty(monthlyPaySlip, monthlyPaySlipDto);
             logger.info("Payslip generated for the employeeId: {}, FromDate: {}, To date: {}",
                     optionalEmployee.get().getId(),

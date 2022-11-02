@@ -23,9 +23,8 @@ import javax.validation.Valid;
 public class SalaryController {
     @Autowired
     SalaryService salaryService;
-    //TODO need to add description about all of these endpoints
     @PostMapping
-    public ServiceResponse<EmployeeSalaryDto> insertSalaryInfo(@Valid @RequestBody EmployeeSalaryDto employeeSalaryDto) throws GenericException {
+    public ServiceResponse<EmployeeSalaryDto> updateSalary(@Valid @RequestBody EmployeeSalaryDto employeeSalaryDto) throws GenericException {
         return salaryService.updateSalaryData(employeeSalaryDto);
     }
     @GetMapping
@@ -41,7 +40,7 @@ public class SalaryController {
                         employeeSalaryPage.getSize()));
     }
     @GetMapping("/{employeeId}")
-    public ServiceResponse getCurrentSalaryByEmployeeId(@PathVariable("employeeId") Long employeeId) throws GenericException {
+    public ServiceResponse<EmployeeSalaryDto> getCurrentSalaryByEmployeeId(@PathVariable("employeeId") Long employeeId) throws GenericException {
         return salaryService.getCurrentSalaryByEmployeeId(employeeId);
     }
 }
