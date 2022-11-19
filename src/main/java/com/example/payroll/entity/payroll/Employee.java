@@ -1,4 +1,4 @@
-package com.example.payroll.models.payroll;
+package com.example.payroll.entity.payroll;
 
 import com.example.payroll.security_oauth2.models.security.User;
 import lombok.*;

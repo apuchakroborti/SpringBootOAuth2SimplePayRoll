@@ -1,6 +1,6 @@
 package com.example.payroll.specifications;
 
-import com.example.payroll.models.payroll.Employee;
+import com.example.payroll.entity.payroll.Employee;
 import com.example.payroll.utils.Utils;
 import org.springframework.data.jpa.domain.Specification;
 

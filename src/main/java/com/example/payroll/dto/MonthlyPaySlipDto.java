@@ -1,6 +1,6 @@
 package com.example.payroll.dto;
 
-import com.example.payroll.models.payroll.EntityCommon;
+import com.example.payroll.entity.payroll.EntityCommon;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

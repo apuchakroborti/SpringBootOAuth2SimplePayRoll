@@ -2,6 +2,7 @@ package com.example.payroll.security_oauth2.models.security;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
@@ -12,6 +13,7 @@ import java.util.Collection;
 @Entity
 @EqualsAndHashCode(of = "id")
 @Table(name = "oauth_user")
+@ToString
 public class User implements UserDetails, Serializable {
     private static final long serialVersionUID = -4744753522696645871L;
 

@@ -6,14 +6,13 @@ import com.example.payroll.dto.request.MonthlyPaySlipRequestDto;
 import com.example.payroll.dto.request.PayslipSearchCriteria;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.Employee;
-import com.example.payroll.models.payroll.EmployeeSalary;
-import com.example.payroll.models.payroll.MonthlyPaySlip;
+import com.example.payroll.entity.payroll.Employee;
+import com.example.payroll.entity.payroll.EmployeeSalary;
+import com.example.payroll.entity.payroll.MonthlyPaySlip;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
-import java.util.List;
 
 public interface MonthlyPaySlipService {
    ServiceResponse<MonthlyPaySlipDto> generatePaySlip(MonthlyPaySlipRequestDto monthlyPaySlipRequestDto) throws GenericException;

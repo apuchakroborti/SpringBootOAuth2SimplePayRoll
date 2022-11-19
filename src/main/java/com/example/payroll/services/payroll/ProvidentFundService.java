@@ -2,8 +2,8 @@ package com.example.payroll.services.payroll;
 
 import com.example.payroll.dto.request.ProvidentFundSearchCriteria;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.EmployeeSalary;
-import com.example.payroll.models.payroll.ProvidentFund;
+import com.example.payroll.entity.payroll.EmployeeSalary;
+import com.example.payroll.entity.payroll.ProvidentFund;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

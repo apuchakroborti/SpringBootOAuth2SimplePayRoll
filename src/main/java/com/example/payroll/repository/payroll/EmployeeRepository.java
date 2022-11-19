@@ -1,10 +1,9 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.models.payroll.Employee;
+import com.example.payroll.entity.payroll.Employee;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;

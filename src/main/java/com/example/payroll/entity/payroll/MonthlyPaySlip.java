@@ -1,4 +1,4 @@
-package com.example.payroll.models.payroll;
+package com.example.payroll.entity.payroll;
 
 import lombok.Getter;
 import lombok.Setter;

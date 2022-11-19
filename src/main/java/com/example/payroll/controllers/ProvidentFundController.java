@@ -5,7 +5,7 @@ import com.example.payroll.dto.request.ProvidentFundSearchCriteria;
 import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.ProvidentFund;
+import com.example.payroll.entity.payroll.ProvidentFund;
 import com.example.payroll.services.payroll.ProvidentFundService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;

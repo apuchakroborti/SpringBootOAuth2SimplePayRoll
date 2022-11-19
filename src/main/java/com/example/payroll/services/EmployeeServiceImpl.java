@@ -2,12 +2,11 @@ package com.example.payroll.services;
 
 import com.example.payroll.dto.request.EmployeeSearchCriteria;
 import com.example.payroll.dto.response.ServiceResponse;
+import com.example.payroll.exceptions.EmployeeNotFoundException;
 import com.example.payroll.exceptions.GenericException;
 import com.example.payroll.dto.EmployeeDto;
-import com.example.payroll.models.payroll.Employee;
-import com.example.payroll.models.payroll.EmployeeSalary;
-import com.example.payroll.models.payroll.MonthlyPaySlip;
-import com.example.payroll.repository.payroll.MonthlyPaySlipRepository;
+import com.example.payroll.entity.payroll.Employee;
+import com.example.payroll.entity.payroll.EmployeeSalary;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.repository.payroll.EmployeeSalaryRepository;
 import com.example.payroll.security_oauth2.models.security.Authority;
@@ -15,13 +14,12 @@ import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.security_oauth2.repository.AuthorityRepository;
 import com.example.payroll.security_oauth2.repository.UserRepository;
 import com.example.payroll.services.payroll.MonthlyPaySlipService;
-import com.example.payroll.services.payroll.impls.MonthlyPaySlipServiceImpl;
 import com.example.payroll.specifications.EmployeeSearchSpecifications;
 import com.example.payroll.utils.Defs;
 import com.example.payroll.utils.Role;
 import com.example.payroll.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -31,46 +29,46 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 @Service
 @Transactional
+@Slf4j
 public class EmployeeServiceImpl implements EmployeeService {
+    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
+    private final AuthorityRepository authorityRepository;
+    private final EmployeeSalaryRepository employeeSalaryRepository;
+    private final MonthlyPaySlipService monthlyPaySlipService;
 
-    Logger logger = LoggerFactory.getLogger(EmployeeServiceImpl.class);
-
-    @Autowired
-    EmployeeRepository employeeRepository;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    AuthorityRepository authorityRepository;
-
-    @Autowired
-    EmployeeSalaryRepository employeeSalaryRepository;
-
-    @Autowired
-    MonthlyPaySlipService monthlyPaySlipService;
-
-    @Autowired
     @Qualifier("userPasswordEncoder")
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    EmployeeServiceImpl(EmployeeRepository employeeRepository,
+            UserRepository userRepository,
+            AuthorityRepository authorityRepository,
+            EmployeeSalaryRepository employeeSalaryRepository,
+            MonthlyPaySlipService monthlyPaySlipService,
+            @Qualifier("userPasswordEncoder")PasswordEncoder passwordEncoder){
+        this.employeeRepository = employeeRepository;
+        this.userRepository = userRepository;
+        this.authorityRepository = authorityRepository;
+        this.employeeSalaryRepository = employeeSalaryRepository;
+        this.monthlyPaySlipService = monthlyPaySlipService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
 
     private User addOauthUser(Employee employee, String password) throws GenericException {
         try {
+            log.info("EmployeeServiceImpl::addOauthUser start: email: {}", employee.getEmail());
             Optional<User> optionalUser = userRepository.findByUsername(employee.getEmail());
             if (optionalUser.isPresent()) {
-                logger.error("User already exists, email: {}", employee.getEmail());
+                log.error("EmployeeServiceImpl::addOauthUser user already exists: email: {}", employee.getEmail());
                 throw new GenericException(Defs.USER_ALREADY_EXISTS);
             }
 
@@ -82,25 +80,33 @@ public class EmployeeServiceImpl implements EmployeeService {
             user.setAuthorities(Arrays.asList(authority));
             user.setPassword(passwordEncoder.encode(password));
 
-            userRepository.save(user);
+            user = userRepository.save(user);
+            log.debug("EmployeeServiceImpl::addOauthUser user: {}", user.toString());
+            log.info("EmployeeServiceImpl::addOauthUser end: email: {}", employee.getEmail());
             return user;
         }catch (GenericException e){
             throw e;
         }catch (Exception e){
-            logger.error("Error occurred while creating oauth user!");
-            throw new GenericException("Error occurred while creating oauth user!", e);
+            log.error("EmployeeServiceImpl::addOauthUser Exception occurred while adding oauth user email:{} message: {}",employee.getEmail(), e.getMessage());
+            throw new GenericException("Error occurred while creating oauth user!");
         }
     }
     @Override
-    public ServiceResponse<EmployeeDto> enrollEmployee(EmployeeDto employeeDto) throws GenericException {
+    public EmployeeDto enrollEmployee(EmployeeDto employeeDto) throws GenericException {
         try {
+            log.info("EmployeeServiceImpl::enrollEmployee service start: userId: {} and email: {}", employeeDto.getUserId(), employeeDto.getEmail());
             Optional<Employee> optionalEmployee = employeeRepository.findByUserId(employeeDto.getUserId());
-            if (optionalEmployee.isPresent()) throw new GenericException(Defs.USER_ALREADY_EXISTS);
+            if (optionalEmployee.isPresent()){
+                log.error("EmployeeServiceImpl::enrollEmployee service:  userId: {} already exists", employeeDto.getUserId());
+                throw new GenericException(Defs.USER_ALREADY_EXISTS);
+            }
 
             Employee employee = new Employee();
             Utils.copyProperty(employeeDto, employee);
 
             User user = addOauthUser(employee, employeeDto.getPassword());
+            log.debug("EmployeeServiceImpl::enrollEmployee service:  user: {} ", user.toString());
+
             employee.setOauthUser(user);
             employee.setStatus(true);
 
@@ -108,6 +114,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee.setCreateTime(LocalDateTime.now());
 
             employee = employeeRepository.save(employee);
+            log.debug("EmployeeServiceImpl::enrollEmployee service:  employee: {} ", employee.toString());
 
             EmployeeSalary employeeSalary = new EmployeeSalary();
             employeeSalary.setEmployee(employee);
@@ -119,22 +126,22 @@ public class EmployeeServiceImpl implements EmployeeService {
 
             employeeSalary.setCreatedBy(1L);
             employeeSalary.setCreateTime(LocalDateTime.now());
-            employeeSalary = employeeSalaryRepository.save(employeeSalary);
 
-            try {
-                //generate payslip for the current financial year
-                monthlyPaySlipService.generatePayslipForCurrentFinancialYear(employee, employeeSalary, employee.getDateOfJoining());
-            } catch (GenericException e) {
-                logger.error("Exception occurred while generating payslip for the current financial year, message: {}", e.getMessage());
-                throw e;
-            }
+            employeeSalary = employeeSalaryRepository.save(employeeSalary);
+            log.debug("EmployeeServiceImpl::enrollEmployee service:  employeeSalary: {} ", employeeSalary.toString());
+
+
+            //generate payslip for the current financial year
+            monthlyPaySlipService.generatePayslipForCurrentFinancialYear(employee, employeeSalary, employee.getDateOfJoining());
+            log.debug("EmployeeServiceImpl::enrollEmployee service:  monthly payslip generation successful employee id: {}, email: {} ", employee.getId(), employee.getEmail());
 
             Utils.copyProperty(employee, employeeDto);
-            return new ServiceResponse(Utils.getSuccessResponse(), employeeDto);
+            log.info("EmployeeServiceImpl::enrollEmployee service end: userId: {} and email: {}", employeeDto.getUserId(), employeeDto.getEmail());
+            return employeeDto;
         }catch (GenericException e){
             throw e;
         }catch (Exception e){
-            logger.error("Exception occurred while enrolling employee, message: {}", e.getMessage());
+            log.error("Exception occurred while enrolling employee, message: {}", e.getMessage());
             throw new GenericException(e.getMessage(), e);
         }
     }
@@ -143,58 +150,57 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDto findByUsername(String username) throws GenericException{
-
         try {
+            log.debug("EmployeeServiceImpl::findByUsername start:  username: {} ", username);
             Optional<Employee> optionalEmployee = employeeRepository.findByEmail(username);
             if (!optionalEmployee.isPresent() || optionalEmployee.get().getStatus().equals(false)) {
+                log.debug("EmployeeServiceImpl::findByUsername user not found by  username: {} ", username);
                 return null;
             }
             EmployeeDto employeeDto = new EmployeeDto();
             Utils.copyProperty(optionalEmployee.get(), employeeDto);
+            log.debug("EmployeeServiceImpl::findByUsername end:  username: {} ", username);
             return employeeDto;
         }catch (Exception e){
-            logger.error("Error while finding employee by username: {}", username);
+            log.error("Error while finding employee by username: {}", username);
             throw new GenericException(e.getMessage());
         }
     }
     @Override
-    public ServiceResponse<EmployeeDto> findEmployeeById(Long id) throws GenericException{
+    public EmployeeDto findEmployeeById(Long id) throws GenericException{
         try {
+            log.info("EmployeeServiceImpl::findEmployeeById start:  id: {} ", id);
             Optional<Employee> optionalUser = employeeRepository.findById(id);
 
             if (!optionalUser.isPresent() || optionalUser.get().getStatus().equals(false)) {
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        "employeeId", Defs.EMPLOYEE_NOT_FOUND,
-                        "Please check employee id is correct"), null);
-            } else {
-                EmployeeDto employeeDto = new EmployeeDto();
-                Utils.copyProperty(optionalUser.get(), employeeDto);
-                return new ServiceResponse(Utils.getSuccessResponse(), employeeDto);
+                log.debug("EmployeeServiceImpl::findEmployeeById employee not found by id: {} ", id);
+                throw new EmployeeNotFoundException(Defs.EMPLOYEE_NOT_FOUND);
             }
+            EmployeeDto employeeDto = new EmployeeDto();
+            Utils.copyProperty(optionalUser.get(), employeeDto);
+            log.info("EmployeeServiceImpl::findEmployeeById end: id: {} ", id);
+            return employeeDto;
+
         }catch (Exception e){
-            logger.error("Error occurred while fetching employee by id: {}", id);
+            log.error("Error occurred while fetching employee by id: {}", id);
             throw new GenericException("Error occurred while fetching employee by id", e);
         }
     }
 
     @Override
-    public ServiceResponse<EmployeeDto> updateEmployeeById(Long id, EmployeeDto employeeDto) throws GenericException{
+    public EmployeeDto updateEmployeeById(Long id, EmployeeDto employeeDto) throws GenericException{
         try {
+            log.debug("EmployeeServiceImpl::updateEmployeeById start:  id: {} ", id);
+
             Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
             if (loggedInEmployee.isPresent() && !loggedInEmployee.get().getId().equals(id)) {
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        null, Defs.NO_PERMISSION_TO_DELETE,
-                        "Please check you have permission to do this operation!"), null);
+                throw new GenericException("No permission to up update!");
             }
 
             Optional<Employee> optionalEmployee = employeeRepository.findById(id);
             if (!optionalEmployee.isPresent() || optionalEmployee.get().getStatus().equals(false)){
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        "employeeId", Defs.EMPLOYEE_NOT_FOUND,
-                        "Please check employee id is correct"), null);
+                log.debug("EmployeeServiceImpl::updateEmployeeById employee not found by id: {} ", id);
+                throw new EmployeeNotFoundException(Defs.EMPLOYEE_NOT_FOUND);
             }
 
 
@@ -206,72 +212,78 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employee.setLastName(employeeDto.getLastName());
             }
             employee = employeeRepository.save(employee);
+            log.debug("EmployeeServiceImpl::updateEmployeeById employee update successful:  employee: {} ", employee.toString());
 
             Utils.copyProperty(employee, employeeDto);
+            log.debug("EmployeeServiceImpl::updateEmployeeById end:  id: {} ", id);
 
-            return new ServiceResponse(Utils.getSuccessResponse(), employeeDto);
+            return employeeDto;
         }catch (Exception e){
-         logger.error("Exception occurred while updating employee, id: {}", id);
+         log.error("Exception occurred while updating employee, id: {}", id);
          throw new GenericException(e.getMessage(), e);
         }
     }
 
     @Override
     public Page<Employee> getEmployeeList(EmployeeSearchCriteria criteria, @PageableDefault(value = 10) Pageable pageable) throws GenericException{
-        Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
-        Long id = null;
-        if(loggedInEmployee.isPresent()){
-            id = loggedInEmployee.get().getId();
-        }
+        try {
+            log.info("EmployeeServiceImpl::getEmployeeList start:  criteria: {} ", Utils.jsonAsString(criteria));
 
-        Page<Employee> userPage = employeeRepository.findAll(
-                EmployeeSearchSpecifications.withId(id==null ? criteria.getId() : id)
-                        .and(EmployeeSearchSpecifications.withFirstName(criteria.getFirstName()))
-                        .and(EmployeeSearchSpecifications.withLastName(criteria.getLastName()))
-                        .and(EmployeeSearchSpecifications.withEmail(criteria.getEmail()))
-                        .and(EmployeeSearchSpecifications.withPhone(criteria.getPhone()))
-                        .and(EmployeeSearchSpecifications.withStatus(true))
-                ,pageable
-        );
-        return userPage;
+            Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
+            Long id = null;
+            if (loggedInEmployee.isPresent()) {
+                id = loggedInEmployee.get().getId();
+            }
+
+            Page<Employee> userPage = employeeRepository.findAll(
+                    EmployeeSearchSpecifications.withId(id == null ? criteria.getId() : id)
+                            .and(EmployeeSearchSpecifications.withFirstName(criteria.getFirstName()))
+                            .and(EmployeeSearchSpecifications.withLastName(criteria.getLastName()))
+                            .and(EmployeeSearchSpecifications.withEmail(criteria.getEmail()))
+                            .and(EmployeeSearchSpecifications.withPhone(criteria.getPhone()))
+                            .and(EmployeeSearchSpecifications.withStatus(true))
+                    , pageable
+            );
+            log.debug("EmployeeServiceImpl::getEmployeeList number of elements: {} ", userPage.getTotalElements());
+
+            log.info("EmployeeServiceImpl::getEmployeeList end");
+            return userPage;
+        }catch (Exception e){
+            log.error("EmployeeServiceImpl::getEmployeeList exception occurred while fetching user list!");
+            throw new GenericException("exception occurred while fetching user list!");
+        }
     }
 
     @Override
-    public ServiceResponse<Boolean> deleteEmployeeById(Long id) throws GenericException{
+    public Boolean deleteEmployeeById(Long id) throws GenericException{
         try {
+            log.info("EmployeeServiceImpl::deleteEmployeeById start:  id: {} ", id);
+
             Optional<Employee> loggedInEmployee = employeeRepository.getLoggedInEmployee();
             Optional<Employee> optionalEmployee = employeeRepository.findById(id);
             if (loggedInEmployee.isPresent() && optionalEmployee.isPresent() &&
                     !loggedInEmployee.get().getId().equals(optionalEmployee.get().getId())) {
-
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        null, Defs.NO_PERMISSION_TO_DELETE,
-                        "Please check you have permission to do this operation!"), null);
+                throw new GenericException(Defs.NO_PERMISSION_TO_DELETE);
             }
             if (!optionalEmployee.isPresent()) {
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        "employeeId", Defs.EMPLOYEE_NOT_FOUND,
-                        "Please check employee id is correct"), null);
+                throw new EmployeeNotFoundException(Defs.EMPLOYEE_NOT_FOUND);
             }
 
             Employee employee = optionalEmployee.get();
             employee.setStatus(false);
-            try {
-                employee = employeeRepository.save(employee);
-                User user = employee.getOauthUser();
-                user.setEnabled(false);
-                userRepository.save(user);
-            } catch (Exception e) {
-                logger.error(Defs.EXCEPTION_OCCURRED_WHILE_SAVING_USER_INFO+", message: {}", e.getMessage());
-                throw new GenericException(Defs.EXCEPTION_OCCURRED_WHILE_SAVING_USER_INFO, e);
-            }
-            return new ServiceResponse(Utils.getSuccessResponse(), true);
+
+            //soft deletion of employee
+            employee = employeeRepository.save(employee);
+            User user = employee.getOauthUser();
+            user.setEnabled(false);
+            userRepository.save(user);
+
+            log.info("EmployeeServiceImpl::deleteEmployeeById end:  id: {} ", id);
+            return  true;
         } catch (GenericException e){
             throw e;
         }catch (Exception e){
-            logger.error("Exception occurred while deleting user, user id: {}", id);
+            log.error("Exception occurred while deleting user, user id: {}", id);
             throw new GenericException(e.getMessage(), e);
         }
     }

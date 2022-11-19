@@ -5,7 +5,7 @@ import com.example.payroll.dto.request.TaxSearchCriteria;
 import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.EmployeeTaxDeposit;
+import com.example.payroll.entity.payroll.EmployeeTaxDeposit;
 import com.example.payroll.services.payroll.TaxDepositService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;

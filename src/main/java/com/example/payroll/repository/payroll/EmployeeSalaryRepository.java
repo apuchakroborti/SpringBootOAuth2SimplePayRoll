@@ -1,6 +1,6 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.models.payroll.EmployeeSalary;
+import com.example.payroll.entity.payroll.EmployeeSalary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

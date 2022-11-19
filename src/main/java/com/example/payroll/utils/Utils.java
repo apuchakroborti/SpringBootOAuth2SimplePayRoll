@@ -4,6 +4,8 @@ import com.example.payroll.dto.response.ErrorModel;
 import com.example.payroll.dto.response.Metadata;
 import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
@@ -94,5 +96,13 @@ public abstract class Utils {
     }
     public static Metadata getSuccessResponse(){
         return new Metadata(HttpStatus.OK, null);
+    }
+    public static String jsonAsString(Object obj){
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

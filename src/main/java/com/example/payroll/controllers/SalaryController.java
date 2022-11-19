@@ -1,13 +1,11 @@
 package com.example.payroll.controllers;
 
 import com.example.payroll.dto.EmployeeSalaryDto;
-import com.example.payroll.dto.ProvidentFundDto;
 import com.example.payroll.dto.request.SalarySearchCriteria;
 import com.example.payroll.dto.response.Pagination;
 import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.EmployeeSalary;
-import com.example.payroll.models.payroll.ProvidentFund;
+import com.example.payroll.entity.payroll.EmployeeSalary;
 import com.example.payroll.services.payroll.SalaryService;
 import com.example.payroll.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;

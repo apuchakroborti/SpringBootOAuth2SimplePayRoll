@@ -8,6 +8,6 @@ import com.example.payroll.dto.response.ServiceResponse;
 import com.example.payroll.exceptions.GenericException;
 
 public interface UserService {
-    ServiceResponse<PasswordChangeResponseDto> changeUserPassword(PasswordChangeRequestDto passwordChangeRequestDto) throws GenericException;
-    ServiceResponse<PasswordChangeResponseDto> resetPassword(PasswordResetRequestDto passwordResetRequestDto) throws GenericException;
+    PasswordChangeResponseDto changeUserPassword(PasswordChangeRequestDto passwordChangeRequestDto) throws GenericException;
+    PasswordChangeResponseDto resetPassword(PasswordResetRequestDto passwordResetRequestDto) throws GenericException;
 }

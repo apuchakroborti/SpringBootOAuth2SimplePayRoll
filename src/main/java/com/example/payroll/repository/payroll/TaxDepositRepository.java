@@ -1,6 +1,6 @@
 package com.example.payroll.repository.payroll;
 
-import com.example.payroll.models.payroll.EmployeeTaxDeposit;
+import com.example.payroll.entity.payroll.EmployeeTaxDeposit;
 import com.example.payroll.utils.TaxType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,7 +9,6 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 public interface TaxDepositRepository extends CrudRepository<EmployeeTaxDeposit, Long> {

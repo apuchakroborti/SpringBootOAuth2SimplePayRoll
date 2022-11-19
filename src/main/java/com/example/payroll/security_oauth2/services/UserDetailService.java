@@ -5,8 +5,9 @@ import com.example.payroll.dto.request.PasswordChangeRequestDto;
 import com.example.payroll.dto.request.PasswordResetRequestDto;
 import com.example.payroll.dto.response.PasswordChangeResponseDto;
 import com.example.payroll.dto.response.ServiceResponse;
+import com.example.payroll.exceptions.EmployeeNotFoundException;
 import com.example.payroll.exceptions.GenericException;
-import com.example.payroll.models.payroll.Employee;
+import com.example.payroll.entity.payroll.Employee;
 import com.example.payroll.repository.payroll.EmployeeRepository;
 import com.example.payroll.security_oauth2.models.security.User;
 import com.example.payroll.security_oauth2.repository.AuthorityRepository;
@@ -61,7 +62,7 @@ public class UserDetailService implements UserService, UserDetailsService {
     }
 
     @Override
-    public ServiceResponse<PasswordChangeResponseDto> changeUserPassword(PasswordChangeRequestDto requestDto) throws GenericException {
+    public PasswordChangeResponseDto changeUserPassword(PasswordChangeRequestDto requestDto) throws GenericException {
         try {
             User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String currentUsername = currentUser.getUsername();
@@ -74,14 +75,10 @@ public class UserDetailService implements UserService, UserDetailsService {
                 user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
                 userRepository.save(user);
             } else {
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        "password", Defs.PASSWORD_MISMATCHED,
-                        "Please check password is correct"), null);
+                throw new GenericException(Defs.PASSWORD_MISMATCHED);
             }
 
-            return new ServiceResponse(Utils.getSuccessResponse(),
-                    new PasswordChangeResponseDto(true, Defs.PASSWORD_CHANGED_SUCCESSFUL));
+            return new PasswordChangeResponseDto(true, Defs.PASSWORD_CHANGED_SUCCESSFUL);
         }catch (Exception e){
             logger.error("Error occurred while updating password");
             throw new GenericException("Error occurred while updating password", e);
@@ -89,15 +86,12 @@ public class UserDetailService implements UserService, UserDetailsService {
     }
 
     @Override
-    public ServiceResponse<PasswordChangeResponseDto> resetPassword(PasswordResetRequestDto passwordResetRequestDto) throws GenericException{
+    public PasswordChangeResponseDto resetPassword(PasswordResetRequestDto passwordResetRequestDto) throws GenericException{
 
         try {
             Optional<Employee> optionalEmployee = customUserRepository.findByEmail(passwordResetRequestDto.getUsername());
             if (!optionalEmployee.isPresent() || optionalEmployee.get().getStatus().equals(false)) {
-                return new ServiceResponse<>(Utils.getSingleErrorBadRequest(
-                        new ArrayList<>(),
-                        "username", Defs.USER_NOT_FOUND,
-                        "Please check username is correct"), null);
+                throw new EmployeeNotFoundException(Defs.USER_NOT_FOUND);
             }
 
             UserDetails userDetails = loadUserByUsername(passwordResetRequestDto.getUsername());
@@ -106,9 +100,8 @@ public class UserDetailService implements UserService, UserDetailsService {
             user.setPassword(passwordEncoder.encode("apu12345"));
             userRepository.save(user);
 
-            return new ServiceResponse(Utils.getSuccessResponse(),
-                    new PasswordChangeResponseDto(true,
-                            Defs.PASSWORD_CHANGED_SUCCESSFUL + ": the new Password is: apu12345"));
+            return new PasswordChangeResponseDto(true,
+                            Defs.PASSWORD_CHANGED_SUCCESSFUL + ": the new Password is: apu12345");
         }catch (Exception e){
             logger.error("Error occurred while resetting password");
             throw new GenericException("Error occurred while resetting password", e);
