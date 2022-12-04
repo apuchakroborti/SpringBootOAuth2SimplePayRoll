@@ -92,4 +92,17 @@ Your client ID: <<copy from https://console.cloud.google.com credentials>>
 Your Client Secret: <<copy from https://console.cloud.google.com credentials>> 
 
 
+Facebook-Signin:
+[Spring Boot client Application] --> {Request: Client Id} {Response: Access Token} --> [Facebook Authentication Server]
+[Facebook Resource Server]
+
+Steps:
+1. Login to the --> https://developers.facebook.com/
+2. MyApps --> Create APP --> Type: Consumer --> Display Name --> SimplePayrollFacebookOAuth2Login --> contact Email --> apuchakroborti50@gmail.com
+3. CreateAppID
+4. Settings --> Basic --> You can see the AppID and App Secret
+5. Settings --> Advanced --> You can see the advanced settings related info
+6. Dashboard --> Facebook Login --> Setup --> Other 
+7. Dashboard --> My Products --> Settings --> Check OAuth/Web Login enabled --> Save Changes
+
 

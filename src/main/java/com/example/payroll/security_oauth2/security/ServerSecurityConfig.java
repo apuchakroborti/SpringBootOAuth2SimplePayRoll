@@ -49,11 +49,11 @@ public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
         logger.info("configure securityEvaluationContextExtension called");
         return new SecurityEvaluationContextExtension();
     }
-    /*for google oauth2 */
+    /*for google oauth2 *//*
     @Override
     protected void configure(HttpSecurity http) throws Exception{
         http.authorizeRequests()
                 .anyRequest().authenticated()
                 .and().oauth2Login();
-    }
+    }*/
 }
