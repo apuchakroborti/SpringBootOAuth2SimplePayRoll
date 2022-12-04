@@ -74,3 +74,22 @@ POST http://127.0.0.1:9000/service-api/api/salary \
 GET http://127.0.0.1:9000/service-api/api/salary  
 7.3 To get current salary of an employee by employeeId: \
 GET http://127.0.0.1:9000/service-api/api/salary/{employeeId} \
+
+Google-Signin:
+Go to the url: https://console.cloud.google.com/ \
+Dashboard --> APIs and Services --> Credentials --> Create Credentials --> OAuth Client ID --> \
+OAuth consent screen --> External
+
+Application Type --> Web Application \
+Name --> [SimplePayroll] \
+Urls --> http://localhost:9000 \
+Authorized redirect URIs --> \
+URIs --> http://localhost:9000/login/oauth2/code/google --> Create
+
+We can see the message
+OAuth client created
+Your client ID: <<copy from https://console.cloud.google.com credentials>> 
+Your Client Secret: <<copy from https://console.cloud.google.com credentials>> 
+
+
+
