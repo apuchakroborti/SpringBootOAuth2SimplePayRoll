@@ -28,6 +28,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
     private static final String SECURED_PATTERN = "/api/**";
     private static final String PUBLIC_URL = "/api/forgot-password/**";
     private static final String CHECK_URL = "/api/login/**";
+    private static  final String TEST_REPORT = "/api/report/**";
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) {
@@ -43,6 +44,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .antMatchers(SECURED_PATTERN).and().authorizeRequests()
                 .antMatchers(PUBLIC_URL).permitAll()
                 .antMatchers(CHECK_URL).permitAll()
+                .antMatchers(TEST_REPORT).permitAll()
                 .antMatchers(HttpMethod.POST, SECURED_PATTERN).access(SECURED_WRITE_SCOPE)
                 .anyRequest().access(SECURED_READ_SCOPE);
     }
